@@ -1,2 +1,4 @@
 rootProject.name = 'dsl-note'
 
+
+include ':groovy', ':kotlin'
