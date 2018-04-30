@@ -1,4 +1,5 @@
 #!/usr/bin/env groovy
+package cn.bingoogolapple.dsl.groovy
 
 /**
  * 用 Groovy 创建 Unix 脚本
