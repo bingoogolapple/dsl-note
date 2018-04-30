@@ -1,0 +1,8 @@
+#!/usr/bin/env groovy
+
+/**
+ * 用 Groovy 创建 Unix 脚本
+ * chmod +x 1_UnixScript
+ * ./1_UnixScript
+ */
+println "Hi, ${args[0]} welcome to Groovy!"
