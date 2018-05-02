@@ -11,13 +11,6 @@ println JsonOutput.prettyPrint(jsonStr)
 def jsonSlurper = new JsonSlurper()
 println jsonSlurper.parseText(jsonStr)
 
-static def getNetworkData(String url) {
-    def connection = new URL(url).openConnection()
-    connection.setRequestMethod('GET')
-    connection.connect()
-    def responseText = connection.content.text
-    def jsonSlurper = new JsonSlurper()
-    return jsonSlurper.parseText(responseText)
-}
-def response = getNetworkData('http://www.wanandroid.com/banner/json')
-println response.data[0].desc
+def responseText = 'http://www.wanandroid.com/banner/json'.toURL().text
+def responseJson = new JsonSlurper().parseText(responseText)
+println responseJson.data[0].desc

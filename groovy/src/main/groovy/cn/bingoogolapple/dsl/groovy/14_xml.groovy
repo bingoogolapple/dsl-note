@@ -3,25 +3,19 @@ package cn.bingoogolapple.dsl.groovy
 import groovy.json.JsonSlurper
 import groovy.xml.MarkupBuilder
 
-static def getNetworkData(String url) {
-    def connection = new URL(url).openConnection()
-    connection.setRequestMethod('GET')
-    connection.connect()
-    def responseText = connection.content.text
-    def jsonSlurper = new JsonSlurper()
-    return jsonSlurper.parseText(responseText)
-}
+def writeXml() {
+    def responseText = 'http://www.wanandroid.com/banner/json'.toURL().text
+    def responseJson = new JsonSlurper().parseText(responseText)
 
-static def writeXml(responseData) {
     def stringWriter = new StringWriter()
     // 用来生成 xml 数据的核心类
     def xmlBuilder = new MarkupBuilder(stringWriter)
     //根结点 ResponseData 创建成功
     xmlBuilder.ResponseData() {
-        errorCode(responseData.errorCode)
-        errorMsg(responseData.errorMsg)
+        errorCode(responseJson.errorCode)
+        errorMsg(responseJson.errorMsg)
         data() {
-            responseData.data.each {
+            responseJson.data.each {
                 banner(desc: it.desc, id: it.id, title: it.title, it.imagePath)
             }
         }
@@ -29,8 +23,7 @@ static def writeXml(responseData) {
     println stringWriter
 }
 
-def netResponse = getNetworkData('http://www.wanandroid.com/banner/json')
-writeXml(netResponse)
+writeXml()
 println '------------------------------------------------------------------------'
 
 def xmlStr = '''\
