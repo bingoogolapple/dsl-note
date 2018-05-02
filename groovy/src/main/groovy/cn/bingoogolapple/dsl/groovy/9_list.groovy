@@ -1,7 +1,5 @@
 package cn.bingoogolapple.dsl.groovy
 
-import java.util.function.Consumer
-
 def list = [1, 2, 3, 4, 5]
 println list.class // class java.util.ArrayList
 println list.size()
@@ -44,6 +42,9 @@ sortStringList.sort { it -> return it.size() }
 println sortStringList
 
 def findList = [-1, 1, -2, 2, -3, 3, -4, 4]
+println '------------------------'
+println findList[2..5] // [-2, 2, -3, 3]
+println findList[2, 5, 3] // [-2, 3, 2]
 println findList.find { return it % 2 == 0 }
 println findList.findAll { return it % 2 != 0 }
 println findList.any { return it % 2 != 0 } // true
