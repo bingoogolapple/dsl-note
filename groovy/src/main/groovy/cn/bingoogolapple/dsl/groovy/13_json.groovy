@@ -15,9 +15,9 @@ static def getNetworkData(String url) {
     def connection = new URL(url).openConnection()
     connection.setRequestMethod('GET')
     connection.connect()
-    def resp = connection.content.text
+    def responseText = connection.content.text
     def jsonSlurper = new JsonSlurper()
-    return jsonSlurper.parseText(resp)
+    return jsonSlurper.parseText(responseText)
 }
 def response = getNetworkData('http://www.wanandroid.com/banner/json')
 println response.data[0].desc
