@@ -91,3 +91,31 @@ println test.findAll { it.isNumber() }.toListString() // [1, 2, 3]
 println test.any { it.isNumber() } // true 字符串中只要有一个数字就是 true
 println test.every { it.isNumber() } // false 字符串中所有的都是数字才为 true
 println test.collect { it.toUpperCase() }
+
+static def testClosureParams(Closure closure) {
+    println "parameterTypes ${closure.parameterTypes}"
+    println "maximumNumberOfParameters ${closure.maximumNumberOfParameters}"
+
+    if (closure.getMaximumNumberOfParameters() == 3) {
+        closure('bingoogolapple', 26, 'xxxxxx')
+    } else if (closure.getMaximumNumberOfParameters() == 2) {
+        closure.call('bingoogolapple', 26)
+        closure.call(['bingoogolapple', 26])
+        closure('bingoogolapple', 26)
+        closure(['bingoogolapple', 26])
+    } else {
+        closure.call('bingoogolapple')
+    }
+}
+
+testClosureParams { String name, int age, xxx ->
+    println "name $name, age $age, xxx $xxx"
+}
+
+testClosureParams { name, Integer age ->
+    println "name $name, age $age"
+}
+
+testClosureParams({ name ->
+    println "name $name"
+})
