@@ -1,4 +1,10 @@
 rootProject.name = 'dsl-note'
 
+include ':app'
+
+include ':dirone', ':dirone:moduleone'
+
+include ':moduletwo'
+project(':moduletwo').projectDir = new File(settingsDir, 'dirtwo/moduletwo')
 
 include ':groovy', ':kotlin'

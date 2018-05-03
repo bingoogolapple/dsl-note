@@ -1,19 +1,34 @@
-buildscript {
-    ext.kotlin_version = '1.2.31'
+// 给定的闭包是针对这个项目的 ScriptHandler 执行的，ScriptHandler 被传递给闭包并设置成其 delegateThe ScriptHandler is passed to the closure as the closure's delegate
+buildscript { ScriptHandler scriptHandler ->
+    ext.kotlin_version = '1.2.30'
 
-    repositories {
-        jcenter()
+    // Executes the given closure against the RepositoryHandler for this ScriptHandler.
+    repositories { RepositoryHandler repositoryHandler ->
         google()
+        jcenter()
     }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.0'
+    // Executes the given closure against the DependencyHandler for this ScriptHandler.
+    dependencies { DependencyHandler dependencyHandler ->
+        classpath 'com.android.tools.build:gradle:3.1.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
+    println "ConfigurationContainer ${getConfigurations()}"
 }
 
-allprojects {
+// The target Project is passed to the closure as the closure's delegate
+allprojects { Project targetProject ->
+    println "allprojects ${name}"
+}
+
+// The target Project is passed to the closure as the closure's delegate
+subprojects { Project targetProject ->
     repositories {
-        jcenter()
         google()
+        jcenter()
     }
+    println "subprojects ${name}"
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }
