@@ -1,0 +1,134 @@
+/**
+ * doFirst 越后添加的越先执行
+ * doLast 越后添加的越后执行
+ */
+task testLifecycle(group: 'bga') {
+    log 'testLifecycle 配置阶段 1'
+    doFirst {
+        log 'doFirst 1'
+    }
+    doFirst {
+        log 'doFirst 2'
+    }
+    doLast {
+        log 'doLast 1'
+    }
+    doLast {
+        log 'doLast 2'
+    }
+    log 'testLifecycle 配置阶段 2'
+}
+testLifecycle.doFirst {
+    log 'doFirst 3'
+}
+testLifecycle.doLast {
+    log 'doLast 3'
+}
+// 配置阶段开始前
+project.beforeEvaluate { Project targetProject ->
+    log "project.beforeEvaluate ${project.name}"
+}
+// 配置阶段完毕后。afterProject 之后
+project.afterEvaluate { Project targetProject ->
+    log "③配置阶段结束后「3」project.afterEvaluate ${project.name}"
+    testLifecycle.doFirst {
+        log 'doFirst 4'
+    }
+    testLifecycle.doLast {
+        log 'doLast 4'
+    }
+}
+gradle.addListener(new TaskExecutionGraphListener() {
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        log "④构建好 Task 拓扑图「1」TaskExecutionGraphListener graphPopulated1 ${graph}"
+    }
+})
+gradle.addListener(new TaskExecutionListener() {
+    @Override
+    void beforeExecute(Task task) {
+        if (task.name == 'testLifecycle') {
+            // beforeExecute 中可以设置是否可用
+//            task.enabled = false
+            task.doFirst {
+                log 'doFirst 5'
+            }
+            task.doLast {
+                log 'doLast 5'
+            }
+        }
+        log "⑤执行 Task 之前「1」TaskExecutionListener beforeExecute1 ${task}"
+    }
+
+    @Override
+    void afterExecute(Task task, TaskState state) {
+        log "⑧执行 Task 之后「1」TaskExecutionListener afterExecute1 ${task} ${state}"
+    }
+})
+gradle.addListener(new TaskActionListener() {
+    @Override
+    void beforeActions(Task task) {
+        if (task.name == 'testLifecycle') {
+            // beforeActions 中不可以设置是否可用
+            task.doFirst {
+                log 'doFirst 8'
+            }
+            task.doLast {
+                log 'doLast 8'
+            }
+        }
+        log "⑥执行 Task Action 之前，还能添加 Action，但不能修改 Task 是否可用 ==> TaskActionListener beforeActions ${task}"
+    }
+
+    @Override
+    void afterActions(Task task) {
+        log "⑦执行 Task Action 之后 ==> TaskActionListener afterActions ${task}"
+    }
+})
+gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+    log "④构建好 Task 拓扑图「2」whenReady ${graph}"
+}
+gradle.taskGraph.addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        log "④构建好 Task 拓扑图「3」TaskExecutionGraphListener graphPopulated2 ${graph}"
+    }
+})
+gradle.taskGraph.addTaskExecutionListener(new TaskExecutionListener() {
+    @Override
+    void beforeExecute(Task task) {
+        if (task.name == 'testLifecycle') {
+//            task.enabled = false
+            task.doFirst {
+                log 'doFirst 6'
+            }
+            task.doLast {
+                log 'doLast 6'
+            }
+        }
+        log "⑤执行 Task 之前「2」TaskExecutionListener beforeExecute2 ${task}"
+    }
+
+    @Override
+    void afterExecute(Task task, TaskState state) {
+        log "⑧执行 Task 之后「2」TaskExecutionListener afterExecute2 ${task} ${state}"
+    }
+})
+gradle.taskGraph.beforeTask { Task task ->
+    if (task.name == 'testLifecycle') {
+//        task.enabled = false
+        task.doFirst {
+            log 'doFirst 7'
+        }
+        task.doLast {
+            log 'doLast 7'
+        }
+    }
+    log "⑤执行 Task 之前「3」beforeTask ${task}"
+}
+gradle.taskGraph.afterTask { Task task, TaskState state ->
+    log "⑧执行 Task 之后「3」afterTask ${task} ${state}"
+}
+def log(String msg) {
+    println "lifecycle ====> ${project.name} ====> ${msg}"
+}

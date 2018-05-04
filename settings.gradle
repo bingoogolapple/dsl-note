@@ -1,10 +1,68 @@
+log "①初始化阶段 START"
 rootProject.name = 'dsl-note'
 
+include ':groovy', ':kotlin'
 include ':app'
-
 include ':dirone', ':dirone:moduleone'
-
 include ':moduletwo'
 project(':moduletwo').projectDir = new File(settingsDir, 'dirtwo/moduletwo')
 
-include ':groovy', ':kotlin'
+gradle.addBuildListener(new BuildListener() {
+    @Override
+    void buildStarted(Gradle gradle) {
+        log "执行阶段开始 BuildListener buildStarted"
+    }
+
+    @Override
+    void settingsEvaluated(Settings settings) {
+        log "①初始化阶段「1」BuildListener settingsEvaluated"
+    }
+
+    @Override
+    void projectsLoaded(Gradle gradle) {
+        log "①初始化阶段「3」BuildListener projectsLoaded"
+        log "①初始化阶段 END"
+    }
+
+    @Override
+    void projectsEvaluated(Gradle gradle) {
+        log "③配置阶段结束后「4」BuildListener projectsEvaluated 所有模块的配置阶段都结束了"
+    }
+
+    @Override
+    void buildFinished(BuildResult result) {
+        log "⑨执行阶段完毕「1」BuildListener buildFinished ${result} ${result.action}"
+    }
+})
+gradle.settingsEvaluated { Settings settings ->
+    log "①初始化阶段「2」gradle.settingsEvaluated"
+}
+gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
+    @Override
+    void beforeEvaluate(Project project) {
+        log "②配置阶段开始前「1」ProjectEvaluationListener beforeEvaluate ${project.name}"
+    }
+
+    @Override
+    void afterEvaluate(Project project, ProjectState state) {
+        log "③配置阶段结束后「1」ProjectEvaluationListener afterEvaluate ${project.name} ${state}"
+    }
+})
+gradle.beforeProject { Project targetProject ->
+    log "②配置阶段开始前「2」gradle.beforeProject ${targetProject.name}"
+}
+gradle.afterProject { Project targetProject ->
+    log "③配置阶段结束后「2」gradle.afterProject ${targetProject.name} =====> ③配置阶段结束后「3」project.afterEvaluate"
+}
+gradle.projectsEvaluated { Gradle gradle ->
+    log "③配置阶段结束后「5」gradle.projectsEvaluated 所有模块的配置阶段都结束了"
+}
+gradle.buildStarted { Gradle gradle ->
+    log "执行阶段开始 buildStarted"
+}
+gradle.buildFinished { BuildResult buildResult ->
+    log "⑨执行阶段完毕「2」buildFinished ${buildResult} ${buildResult.action}"
+}
+def log(String msg) {
+    println "lifecycle ====> settings.gradle ====> ${msg}"
+}
