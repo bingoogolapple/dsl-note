@@ -1,0 +1,47 @@
+copy {
+    from file("$rootDir/config.gradle") // 文件或文件夹
+    into buildDir // 只能是文件夹
+}
+
+//delete "$buildDir/config.gradle"
+
+// 递归遍历
+fileTree(buildDir) { FileTree fileTree ->
+    fileTree.visit { FileTreeElement fileTreeElement ->
+        println "遍历文件 $fileTreeElement.name"
+    }
+}
+
+"cp $rootDir/config.gradle $buildDir/config2.gradle".execute()
+
+exec {
+    try {
+        executable 'bash'
+        args '-c', 'ls build'
+    } catch (GradleException e) {
+        e.printStackTrace()
+    }
+}
+
+exec {
+    try {
+        executable 'ls'
+        args '.gradle'
+    } catch (GradleException e) {
+        e.printStackTrace()
+    }
+}
+
+exec {
+    commandLine 'ls', 'gradle'
+}
+
+new ByteArrayOutputStream().withStream { os ->
+    def result = exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = os
+    }
+    println "${result} commitId is ${os.toString().trim()}"
+}
+
+println "commitId is ${"git rev-parse --short HEAD".execute().text.trim()}"

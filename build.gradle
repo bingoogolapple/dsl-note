@@ -1,6 +1,6 @@
 // 给定的闭包是针对这个项目的 ScriptHandler 执行的，ScriptHandler 被传递给闭包并设置成其 delegateThe ScriptHandler is passed to the closure as the closure's delegate
 buildscript { ScriptHandler scriptHandler ->
-    apply from: "config.gradle"
+    apply from: 'config.gradle'
     // Executes the given closure against the RepositoryHandler for this ScriptHandler.
     repositories { RepositoryHandler repositoryHandler ->
         google()
@@ -34,4 +34,5 @@ task clean(type: Delete) {
 }
 
 apply from: "${rootDir}/lifecycle.gradle"
+apply from: "${rootDir}/file.gradle"
 // gradle projects 查看所有的 Project
