@@ -87,6 +87,10 @@ gradle.addListener(new TaskActionListener() {
 })
 gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
     log "④构建好 Task 拓扑图「2」whenReady ${graph}"
+    // 只会有当前要执行的 task 拓扑图
+    graph.allTasks.each {
+        log "④构建好 Task 拓扑图「2」whenReady $it.name"
+    }
 }
 gradle.taskGraph.addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
     @Override

@@ -1,0 +1,124 @@
+// gradle tasks --all   查看项目中定义的所有 Task
+
+task setWhoamiProperty(group: 'bga') {
+    doLast {
+        new ByteArrayOutputStream().withStream { os ->
+            def result = exec {
+                executable = 'whoami'
+                standardOutput = os
+            }
+            rootProject.ext.whoami = os.toString().trim()
+        }
+    }
+    doLast {
+        println "$name $rootProject.ext.whoami"
+    }
+}
+tasks.create(name: 'setHostnameProperty') {
+    group = 'bga'
+    doFirst {
+        new ByteArrayOutputStream().withStream { os ->
+            def result = exec {
+                executable = 'hostname'
+                standardOutput = os
+            }
+            rootProject.ext.hostname = os.toString().trim()
+        }
+    }
+    doLast {
+        println "$name $rootProject.ext.hostname"
+    }
+}
+task printBuildInfo {
+    group = 'bga'
+    dependsOn setWhoamiProperty, 'setHostnameProperty' // 默认按拼音字母排序，W 在 H 之后
+
+    println "printBuildInfo this：" + this
+    println "printBuildInfo owner：" + owner
+    println "printBuildInfo delegate：" + delegate
+
+    doFirst {
+        println "doFirst this：" + this
+        println "doFirst owner：" + owner
+        println "doFirst delegate：" + delegate
+        // 这里的 name 其实是 delegate.name
+        println "$name $rootProject.ext.whoami"
+        println "$name $rootProject.ext.hostname"
+    }
+}
+
+//def startBuildTime
+//this.afterEvaluate { Project project ->
+//    def firstTask = project.tasks.findByName('preBuild')
+//    firstTask.doFirst {
+//        startBuildTime = System.currentTimeMillis()
+//    }
+//    def lastTask = project.tasks.findByName('build')
+//    lastTask.doLast {
+//        println "总构建耗时 ${System.currentTimeMillis() - startBuildTime}ms"
+//    }
+//}
+
+class TimeListener implements TaskExecutionGraphListener, TaskActionListener, BuildListener {
+    private long startBuildTime
+    private long startTaskTime
+    private times = []
+
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        println "\n要执行的 Task 为："
+        graph.allTasks.each {
+            println "   $it.name"
+        }
+        println ''
+
+        def firstTask = graph.allTasks.get(0)
+        firstTask.doFirst {
+            startBuildTime = System.currentTimeMillis()
+        }
+        def lastTask = graph.allTasks.get(graph.allTasks.size() - 1)
+        lastTask.doLast {
+            println "总构建耗时 ${System.currentTimeMillis() - startBuildTime}ms"
+        }
+    }
+
+    @Override
+    void beforeActions(Task task) {
+        startTaskTime = System.currentTimeMillis()
+    }
+
+    @Override
+    void afterActions(Task task) {
+        def ms = System.currentTimeMillis() - startTaskTime
+        times.add([ms, task.path])
+        task.project.logger.warn "${task.path} spend ${ms}ms"
+    }
+
+    @Override
+    void buildStarted(Gradle gradle) {
+    }
+
+    @Override
+    void settingsEvaluated(Settings settings) {
+    }
+
+    @Override
+    void projectsLoaded(Gradle gradle) {
+    }
+
+    @Override
+    void projectsEvaluated(Gradle gradle) {
+    }
+
+    @Override
+    void buildFinished(BuildResult buildResult) {
+        println "\nTask spend time:"
+        times.each { time ->
+//            if (time[0] >= 50) {
+                printf "%7sms  %s\n", time
+//            }
+        }
+        println ''
+    }
+}
+gradle.addListener(new TimeListener())
