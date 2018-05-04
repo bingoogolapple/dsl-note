@@ -1,7 +1,6 @@
 // 给定的闭包是针对这个项目的 ScriptHandler 执行的，ScriptHandler 被传递给闭包并设置成其 delegateThe ScriptHandler is passed to the closure as the closure's delegate
 buildscript { ScriptHandler scriptHandler ->
-    ext.kotlin_version = '1.2.30'
-
+    apply from: "config.gradle"
     // Executes the given closure against the RepositoryHandler for this ScriptHandler.
     repositories { RepositoryHandler repositoryHandler ->
         google()
@@ -18,16 +17,16 @@ buildscript { ScriptHandler scriptHandler ->
 allprojects { Project targetProject ->
     // 这里获取 project 是调用闭包 delegate（参数 targetProject） 中的 getProject() 方法，也就是 targetProject
 //    println "allprojects ${project.name}" // 输出所有项目名称，包括自己
+    repositories {
+        google()
+        jcenter()
+    }
 }
 
 // The target Project is passed to the closure as the closure's delegate
 subprojects { Project targetProject ->
     // 这里获取 project 是调用闭包 delegate（参数 targetProject） 中的 getProject() 方法，也就是 targetProject
 //    println "subprojects ${project.name}" // 输出所有子项目名称，不包括自己
-    repositories {
-        google()
-        jcenter()
-    }
 }
 
 task clean(type: Delete) {
