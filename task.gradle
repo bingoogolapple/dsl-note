@@ -10,9 +10,6 @@ task setWhoamiProperty(group: 'bga') {
             rootProject.ext.whoami = os.toString().trim()
         }
     }
-    doLast {
-        println "$name $rootProject.ext.whoami"
-    }
 }
 tasks.create(name: 'setHostnameProperty') {
     group = 'bga'
@@ -25,25 +22,22 @@ tasks.create(name: 'setHostnameProperty') {
             rootProject.ext.hostname = os.toString().trim()
         }
     }
-    doLast {
-        println "$name $rootProject.ext.hostname"
-    }
 }
 task printBuildInfo {
     group = 'bga'
     dependsOn setWhoamiProperty, 'setHostnameProperty' // 默认按拼音字母排序，W 在 H 之后
 
-    println "printBuildInfo this：" + this
+    println "\nprintBuildInfo this：" + this
     println "printBuildInfo owner：" + owner
-    println "printBuildInfo delegate：" + delegate
+    println "printBuildInfo delegate：" + delegate + '\n'
 
     doFirst {
-        println "doFirst this：" + this
+        println "\ndoFirst this：" + this
         println "doFirst owner：" + owner
         println "doFirst delegate：" + delegate
         // 这里的 name 其实是 delegate.name
-        println "$name $rootProject.ext.whoami"
-        println "$name $rootProject.ext.hostname"
+        println "\n$name $rootProject.ext.whoami"
+        println "$name $rootProject.ext.hostname\n"
     }
 }
 
@@ -58,67 +52,3 @@ task printBuildInfo {
 //        println "总构建耗时 ${System.currentTimeMillis() - startBuildTime}ms"
 //    }
 //}
-
-class TimeListener implements TaskExecutionGraphListener, TaskActionListener, BuildListener {
-    private long startBuildTime
-    private long startTaskTime
-    private times = []
-
-    @Override
-    void graphPopulated(TaskExecutionGraph graph) {
-        println "\n要执行的 Task 为："
-        graph.allTasks.each {
-            println "   $it.name"
-        }
-        println ''
-
-        def firstTask = graph.allTasks.get(0)
-        firstTask.doFirst {
-            startBuildTime = System.currentTimeMillis()
-        }
-        def lastTask = graph.allTasks.get(graph.allTasks.size() - 1)
-        lastTask.doLast {
-            println "总构建耗时 ${System.currentTimeMillis() - startBuildTime}ms"
-        }
-    }
-
-    @Override
-    void beforeActions(Task task) {
-        startTaskTime = System.currentTimeMillis()
-    }
-
-    @Override
-    void afterActions(Task task) {
-        def ms = System.currentTimeMillis() - startTaskTime
-        times.add([ms, task.path])
-        task.project.logger.warn "${task.path} spend ${ms}ms"
-    }
-
-    @Override
-    void buildStarted(Gradle gradle) {
-    }
-
-    @Override
-    void settingsEvaluated(Settings settings) {
-    }
-
-    @Override
-    void projectsLoaded(Gradle gradle) {
-    }
-
-    @Override
-    void projectsEvaluated(Gradle gradle) {
-    }
-
-    @Override
-    void buildFinished(BuildResult buildResult) {
-        println "\nTask spend time:"
-        times.each { time ->
-//            if (time[0] >= 50) {
-                printf "%7sms  %s\n", time
-//            }
-        }
-        println ''
-    }
-}
-gradle.addListener(new TimeListener())

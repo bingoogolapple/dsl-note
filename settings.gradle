@@ -1,4 +1,4 @@
-log "①初始化阶段 START"
+ComposeListener.log "①初始化阶段 START"
 rootProject.name = 'dsl-note'
 
 include ':groovy', ':kotlin'
@@ -7,7 +7,11 @@ include ':dirone', ':dirone:moduleone'
 include ':moduletwo'
 project(':moduletwo').projectDir = new File(settingsDir, 'dirtwo/moduletwo')
 
-gradle.addBuildListener(new BuildListener() {
+class ComposeListener implements TaskExecutionGraphListener, TaskActionListener, BuildListener, ProjectEvaluationListener, TaskExecutionListener {
+    private long startBuildTime
+    private long startTaskTime
+    private times = []
+
     @Override
     void buildStarted(Gradle gradle) {
         log "执行阶段开始 BuildListener buildStarted"
@@ -25,20 +29,6 @@ gradle.addBuildListener(new BuildListener() {
     }
 
     @Override
-    void projectsEvaluated(Gradle gradle) {
-        log "③配置阶段结束后「4」BuildListener projectsEvaluated 所有模块的配置阶段都结束了"
-    }
-
-    @Override
-    void buildFinished(BuildResult result) {
-        log "⑨执行阶段完毕「1」BuildListener buildFinished ${result} ${result.action}"
-    }
-})
-gradle.settingsEvaluated { Settings settings ->
-    log "①初始化阶段「2」gradle.settingsEvaluated"
-}
-gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
-    @Override
     void beforeEvaluate(Project project) {
         log "②配置阶段开始前「1」ProjectEvaluationListener beforeEvaluate ${project.name}"
     }
@@ -47,22 +37,137 @@ gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
     void afterEvaluate(Project project, ProjectState state) {
         log "③配置阶段结束后「1」ProjectEvaluationListener afterEvaluate ${project.name} ${state}"
     }
-})
-gradle.beforeProject { Project targetProject ->
-    log "②配置阶段开始前「2」gradle.beforeProject ${targetProject.name}"
+
+    @Override
+    void projectsEvaluated(Gradle gradle) {
+        log "③配置阶段结束后「4」BuildListener projectsEvaluated 所有模块的配置阶段都结束了"
+    }
+
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        log "④构建好 Task 拓扑图「1」TaskExecutionGraphListener graphPopulated ${graph}"
+
+        // 只会有当前要执行的 task 拓扑图
+        println '\n要执行的 Task 为：'
+        graph.allTasks.each {
+            println "   $it.name"
+        }
+        println ''
+
+        def firstTask = graph.allTasks.get(0)
+        firstTask.doFirst {
+            startBuildTime = System.currentTimeMillis()
+        }
+        def lastTask = graph.allTasks.get(graph.allTasks.size() - 1)
+        lastTask.doLast {
+            println "总构建耗时 ${System.currentTimeMillis() - startBuildTime}ms\n"
+        }
+    }
+
+    @Override
+    void beforeExecute(Task task) {
+        log "⑤执行 Task 之前「1」TaskExecutionListener beforeExecute ${task}"
+        if (task.name == 'testLifecycle') {
+            // beforeExecute 中可以设置是否可用
+//            task.enabled = false
+            task.doFirst {
+                log 'doFirst 5'
+            }
+            task.doLast {
+                log 'doLast 5'
+            }
+        }
+    }
+
+    @Override
+    void beforeActions(Task task) {
+        log "⑥执行 Task Action 之前，还能添加 Action，但不能修改 Task 是否可用"
+        if (task.name == 'testLifecycle') {
+            // beforeActions 中不可以设置是否可用
+            task.doFirst {
+                log 'doFirst 8'
+            }
+            task.doLast {
+                log 'doLast 8'
+            }
+        }
+
+        startTaskTime = System.currentTimeMillis()
+    }
+
+    @Override
+    void afterActions(Task task) {
+        log "⑦执行 Task Action 之后 ==> TaskActionListener afterActions ${task}"
+
+        def ms = System.currentTimeMillis() - startTaskTime
+        times.add([ms, task.path])
+//        task.project.logger.warn "${task.path} spend ${ms}ms"
+    }
+
+    @Override
+    void afterExecute(Task task, TaskState state) {
+        log "⑧执行 Task 之后「1」TaskExecutionListener afterExecute1 ${task} ${state}"
+    }
+
+    @Override
+    void buildFinished(BuildResult result) {
+        log "⑨执行阶段完毕「1」BuildListener buildFinished ${result} ${result.action}"
+
+        println "\nTask spend time:"
+        times.each { time ->
+//            if (time[0] >= 50) {
+            printf "%7sms  %s\n", time
+//            }
+        }
+        println ''
+    }
+
+    static def log(String msg) {
+        println "lifecycle ====> settings.gradle ====> ${msg}"
+    }
 }
-gradle.afterProject { Project targetProject ->
-    log "③配置阶段结束后「2」gradle.afterProject ${targetProject.name} =====> ③配置阶段结束后「3」project.afterEvaluate"
-}
-gradle.projectsEvaluated { Gradle gradle ->
-    log "③配置阶段结束后「5」gradle.projectsEvaluated 所有模块的配置阶段都结束了"
-}
+
+gradle.addListener(new ComposeListener())
+
 gradle.buildStarted { Gradle gradle ->
-    log "执行阶段开始 buildStarted"
+    ComposeListener.log "执行阶段开始 buildStarted"
 }
+
+gradle.settingsEvaluated { Settings settings ->
+    ComposeListener.log "①初始化阶段「2」gradle.settingsEvaluated"
+}
+
+gradle.beforeProject { Project targetProject ->
+    ComposeListener.log "②配置阶段开始前「2」gradle.beforeProject ${targetProject.name}"
+}
+
+gradle.afterProject { Project targetProject ->
+    ComposeListener.log "③配置阶段结束后「2」gradle.afterProject ${targetProject.name}"
+}
+
+gradle.projectsEvaluated { Gradle gradle ->
+    ComposeListener.log "③配置阶段结束后「5」gradle.projectsEvaluated 所有模块的配置阶段都结束了"
+}
+
+gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+    ComposeListener.log "④构建好 Task 拓扑图「2」whenReady ${graph}"
+}
+gradle.taskGraph.beforeTask { Task task ->
+    if (task.name == 'testLifecycle') {
+//        task.enabled = false
+        task.doFirst {
+            ComposeListener.log 'doFirst 7'
+        }
+        task.doLast {
+            ComposeListener.log 'doLast 7'
+        }
+    }
+    ComposeListener.log "⑤执行 Task 之前「2」beforeTask ${task}"
+}
+gradle.taskGraph.afterTask { Task task, TaskState state ->
+    ComposeListener.log "⑧执行 Task 之后「2」afterTask ${task} ${state}"
+}
+
 gradle.buildFinished { BuildResult buildResult ->
-    log "⑨执行阶段完毕「2」buildFinished ${buildResult} ${buildResult.action}"
-}
-def log(String msg) {
-    println "lifecycle ====> settings.gradle ====> ${msg}"
+    ComposeListener.log "⑨执行阶段完毕「2」buildFinished ${buildResult} ${buildResult.action}"
 }
