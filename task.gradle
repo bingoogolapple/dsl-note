@@ -25,7 +25,7 @@ tasks.create(name: 'setHostnameProperty') {
 }
 task printBuildInfo {
     group = 'bga'
-    dependsOn setWhoamiProperty, 'setHostnameProperty' // 默认按拼音字母排序，W 在 H 之后
+    dependsOn setWhoamiProperty, 'setHostnameProperty'
 
     println "\nprintBuildInfo this：" + this
     println "printBuildInfo owner：" + owner
@@ -41,14 +41,141 @@ task printBuildInfo {
     }
 }
 
-//def startBuildTime
-//this.afterEvaluate { Project project ->
-//    def firstTask = project.tasks.findByName('preBuild')
-//    firstTask.doFirst {
-//        startBuildTime = System.currentTimeMillis()
-//    }
-//    def lastTask = project.tasks.findByName('build')
-//    lastTask.doLast {
-//        println "总构建耗时 ${System.currentTimeMillis() - startBuildTime}ms"
+task taskA(group: 'bga', description: 'taskA 的描述') {
+    doFirst {
+        println "taskA"
+    }
+}
+
+task taskB {
+    group = 'bga'
+    description = 'taskB 的描述'
+    doFirst {
+        println "taskB"
+    }
+}
+
+// 默认按拼音字母排序
+task taskC(dependsOn: [taskB, 'taskA']) {
+    group = 'bga'
+    doFirst {
+        println "taskC"
+    }
+}
+
+tasks.create(name: 'taskD', group: 'bga') {
+    doFirst {
+        println "taskD"
+    }
+}
+
+tasks.create(name: 'taskE', group: 'bga', dependsOn: [taskD, 'taskC']) {
+    doFirst {
+        println "taskE"
+    }
+}
+
+task taskF {
+    group = 'bga'
+    tasks.findByName('taskA').dependsOn 'taskD'
+    dependsOn taskE, 'taskA'
+    doFirst {
+        println "taskF"
+    }
+}
+
+task taskG {
+    group = 'bga'
+    doFirst {
+        println "taskG"
+    }
+}
+
+taskG.dependsOn taskA, 'taskD'
+
+task taskH {
+    group = 'bga'
+    doFirst {
+        println "taskH"
+    }
+}
+tasks.findByName('taskH').dependsOn taskA, 'taskD'
+
+task taskI {
+    group = 'bga'
+    // 这里只能找到当前 Task 定义之前定义的 task
+    dependsOn tasks.findAll { task ->
+        return task.group == 'bga' && task.name != 'taskI'
+    }
+    // 之后定义的 Task 可以通过字符串名称来依赖
+    dependsOn 'taskJ'
+    doFirst {
+        println "taskI"
+    }
+}
+//project.afterEvaluate {
+//    taskI.dependsOn tasks.findAll { task ->
+//        return task.group == 'bga' && task.name != 'taskI'
 //    }
 //}
+
+task taskJ {
+    group = 'bga'
+    doFirst {
+        println "taskJ"
+    }
+}
+// taskJ 不依赖 taskK，但让 taskJ 在 taskK 之后执行
+taskJ.mustRunAfter 'taskK'
+// 不能同时指定 taskK.dependsOn taskJ 和 taskJ.mustRunAfter taskK
+task taskK {
+    group = 'bga'
+    doFirst {
+        println "taskK"
+    }
+}
+task taskL {
+    dependsOn taskJ, taskK
+    group = 'bga'
+    doFirst {
+        println "taskL"
+    }
+}
+task taskM {
+    group = 'bga'
+    doFirst {
+        println "终结器任务 taskM 执行了 doFirst"
+    }
+    doLast {
+        println "终结器任务 taskM 执行了 doLast"
+    }
+}
+task taskN {
+    group = 'bga'
+    doFirst {
+        println "终结器任务 taskN 执行了 doFirst"
+        throw new GradleException("终结器任务 taskN 执行失败，终结器任务 taskM 还是会执行")
+    }
+    doLast {
+        println "终结器任务 taskN 执行了 doLast"
+    }
+}
+taskM.mustRunAfter taskN
+
+task taskO {
+    group = 'bga'
+    doFirst {
+        println "原始任务 taskO  执行了 doFirst"
+        throw new GradleException("原始任务 taskO 执行失败，终结器任务 taskM 和 taskN 还是会执行")
+    }
+    doLast {
+        println "原始任务 taskO  执行了 doLast"
+    }
+}
+/**
+ * 通过 finalizedBy 来指定 taskM、taskN 作为 taskO 的终结器任务
+ * taskM、taskN 会在 taskO 之后执行
+ * 不管 taskO 执行成功与否，taskM、taskN 都会执行
+ * taskM、taskN 可以用来清理 taskO 中的资源
+ */
+taskO.finalizedBy taskM, taskN
