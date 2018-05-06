@@ -62,6 +62,7 @@ task taskC(dependsOn: [taskB, 'taskA']) {
         println "taskC"
     }
 }
+// 通过模拟运行检查 Task 依赖 gradle -m taskC
 
 tasks.create(name: 'taskD', group: 'bga') {
     doFirst {

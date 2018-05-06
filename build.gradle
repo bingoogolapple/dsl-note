@@ -60,6 +60,7 @@ subprojects { Project targetProject ->
     // 这里获取 project 是调用闭包 delegate（参数 targetProject） 中的 getProject() 方法，也就是 targetProject
 //    println "subprojects ${project.name}" // 输出所有子项目名称，不包括自己
 }
+// gradle projects 查看所有的 Project
 
 task clean(type: Delete) {
     delete rootProject.buildDir
@@ -68,4 +69,4 @@ task clean(type: Delete) {
 apply from: "${rootDir}/lifecycle.gradle"
 apply from: "${rootDir}/file_commandline.gradle"
 apply from: "${rootDir}/task.gradle"
-// gradle projects 查看所有的 Project
+apply from: "${rootDir}/releaseinfo.gradle"
