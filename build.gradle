@@ -66,6 +66,13 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
+tasks.whenTaskAdded { task ->
+    println "添加了任务 $task.name"
+    if (task.name.contains('taskA')) {
+        task.enabled = false
+    }
+}
+
 apply from: "${rootDir}/lifecycle.gradle"
 apply from: "${rootDir}/file_commandline.gradle"
 apply from: "${rootDir}/task.gradle"
