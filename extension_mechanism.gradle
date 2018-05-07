@@ -1,0 +1,28 @@
+class Person {
+    String personName = '李四'
+    int personAge = 18
+
+    def printPerson() {
+        println "name is ${personName}, age is ${personAge}"
+    }
+}
+
+def person(Closure<Person> closure) {
+    Person p = new Person()
+    closure.delegate = p    // 委托模式优先
+    closure.setResolveStrategy(Closure.DELEGATE_FIRST)
+    return closure
+}
+
+def resolveStrategyClosure = person {
+    personName = '张三'
+    personAge = 20
+    printPerson()
+}
+
+task testResolveStrategyClosure {
+    group = 'bga'
+    doLast {
+        resolveStrategyClosure.call()
+    }
+}
