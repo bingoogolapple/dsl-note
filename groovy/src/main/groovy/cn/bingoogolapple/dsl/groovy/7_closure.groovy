@@ -119,3 +119,11 @@ testClosureParams { name, Integer age ->
 testClosureParams({ name ->
     println "name $name"
 })
+
+def originClosure = { param1, param2, param3 ->
+    println "param1 is $param1, param2 is $param2, param3 is $param3"
+}
+// curry 方法可以重载原闭包，并将一些参数赋值
+def ultimateClosure = originClosure.curry(1, 2)
+ultimateClosure.call(3)
+originClosure.call(3, 2, 1)
