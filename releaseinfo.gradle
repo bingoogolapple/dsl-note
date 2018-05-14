@@ -1,85 +1,85 @@
-import groovy.xml.MarkupBuilder
-
-ext {
-    versionName = rootProject.ext.android.versionName
-    versionCode = rootProject.ext.android.versionCode
-    versionInfo = 'App的第2个版本'
-    destFile = file("${rootProject.buildDir}/releases.xml")
-    if (destFile != null && !destFile.exists()) {
-        destFile.createNewFile()
-    }
-}
-
-task writeTask {
-    inputs.property('versionCode', this.versionCode)
-    inputs.property('versionName', this.versionName)
-    inputs.property('versionInfo', this.versionInfo)
-    outputs.file this.destFile
-    doLast {
-        // 将输入的内容写入到输出文件中去
-        def data = inputs.getProperties()
-        File file = outputs.getFiles().getSingleFile()
-        def versionMsg = new VersionMsg(data)
-        // 将实体对象写入到xml文件中
-        def sw = new StringWriter()
-        def xmlBuilder = new MarkupBuilder(sw)
-        if (file.text != null && file.text.size() <= 0) {
-            // 没有内容
-            xmlBuilder.releases {
-                release {
-                    versionCode(versionMsg.versionCode)
-                    versionName(versionMsg.versionName)
-                    versionInfo(versionMsg.versionInfo)
-                }
-            }
-            // 直接写入
-            file.withWriter { writer -> writer.append(sw.toString()) }
-        } else {
-            // 已有其它版本内容
-            xmlBuilder.release {
-                versionCode(versionMsg.versionCode)
-                versionName(versionMsg.versionName)
-                versionInfo(versionMsg.versionInfo)
-            }
-            // 插入到最后一行前面
-            def lines = file.readLines()
-            def lengths = lines.size() - 1
-            file.withWriter { writer ->
-                lines.eachWithIndex { line, index ->
-                    if (index != lengths) {
-                        writer.append(line + '\r\n')
-                    } else if (index == lengths) {
-                        writer.append('\r\n' + sw.toString() + '\r\n')
-                        writer.append(lines.get(lengths))
-                    }
-                }
-            }
-        }
-    }
-}
-
-class VersionMsg {
-    String versionCode
-    String versionName
-    String versionInfo
-}
-
-task readTask {
-    group = 'bga'
-    // task 依赖推断，通过使用一个 task 的输出作为另一个 task 的输入，Gradle 就可以推断出依赖关系，所依赖的 task 会自动运行
-    // 隐式引用 War 任务的输出，war 包会被放到 zip 文件的根目录下
-    inputs.file writeTask.outputs.files
-    doLast {
-        // 读取输入文件的内容并显示
-        def file = inputs.files.singleFile
-        println file.text
-    }
-}
-
-task testInputOutputTask {
-    group = 'bga'
-    dependsOn readTask, writeTask
-    doLast {
-        println '输入输出任务结束'
-    }
-}
+//import groovy.xml.MarkupBuilder
+//
+//ext {
+//    versionName = rootProject.ext.android.versionName
+//    versionCode = rootProject.ext.android.versionCode
+//    versionInfo = 'App的第2个版本'
+//    destFile = file("${rootProject.buildDir}/releases.xml")
+//    if (destFile != null && !destFile.exists()) {
+//        destFile.createNewFile()
+//    }
+//}
+//
+//task writeTask {
+//    inputs.property('versionCode', this.versionCode)
+//    inputs.property('versionName', this.versionName)
+//    inputs.property('versionInfo', this.versionInfo)
+//    outputs.file this.destFile
+//    doLast {
+//        // 将输入的内容写入到输出文件中去
+//        def data = inputs.getProperties()
+//        File file = outputs.getFiles().getSingleFile()
+//        def versionMsg = new VersionMsg(data)
+//        // 将实体对象写入到xml文件中
+//        def sw = new StringWriter()
+//        def xmlBuilder = new MarkupBuilder(sw)
+//        if (file.text != null && file.text.size() <= 0) {
+//            // 没有内容
+//            xmlBuilder.releases {
+//                release {
+//                    versionCode(versionMsg.versionCode)
+//                    versionName(versionMsg.versionName)
+//                    versionInfo(versionMsg.versionInfo)
+//                }
+//            }
+//            // 直接写入
+//            file.withWriter { writer -> writer.append(sw.toString()) }
+//        } else {
+//            // 已有其它版本内容
+//            xmlBuilder.release {
+//                versionCode(versionMsg.versionCode)
+//                versionName(versionMsg.versionName)
+//                versionInfo(versionMsg.versionInfo)
+//            }
+//            // 插入到最后一行前面
+//            def lines = file.readLines()
+//            def lengths = lines.size() - 1
+//            file.withWriter { writer ->
+//                lines.eachWithIndex { line, index ->
+//                    if (index != lengths) {
+//                        writer.append(line + '\r\n')
+//                    } else if (index == lengths) {
+//                        writer.append('\r\n' + sw.toString() + '\r\n')
+//                        writer.append(lines.get(lengths))
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+//
+//class VersionMsg {
+//    String versionCode
+//    String versionName
+//    String versionInfo
+//}
+//
+//task readTask {
+//    group = 'bga'
+//    // task 依赖推断，通过使用一个 task 的输出作为另一个 task 的输入，Gradle 就可以推断出依赖关系，所依赖的 task 会自动运行
+//    // 隐式引用 War 任务的输出，war 包会被放到 zip 文件的根目录下
+//    inputs.file writeTask.outputs.files
+//    doLast {
+//        // 读取输入文件的内容并显示
+//        def file = inputs.files.singleFile
+//        println file.text
+//    }
+//}
+//
+//task testInputOutputTask {
+//    group = 'bga'
+//    dependsOn readTask, writeTask
+//    doLast {
+//        println '输入输出任务结束'
+//    }
+//}

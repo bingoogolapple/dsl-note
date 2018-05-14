@@ -1,0 +1,103 @@
+def pluginModuleName = 'buildSrc'
+def pluginPackageName = 'cn.bingoogolapple.gradle.note'
+def pluginSimpleClassName = 'HelloGradlePlugin'
+def pluginShortName = 'hello-gradle-plugin'
+
+// task 任务名称
+task createPluginModuleDir {
+    group 'bga'
+    description '创建插件模块目录'
+    doFirst {
+        println "doFirst 后进先出 | 2.创建 ${pluginModuleName} 目录"
+        rootProject.file('buildSrc').mkdir()
+    }
+    doFirst {
+        println "doFirst 后进先出 | 1.删除已存在的 ${pluginModuleName} 目录"
+        rootProject.file('buildSrc').deleteOnExit()
+    }
+}
+
+tasks.create(name: 'createBuildGradleFile', group: 'bga', description: '创建 build.gradle 文件', dependsOn: 'createPluginModuleDir') {
+//    dependsOn createPluginModuleDir // 依赖 Task 实例对象，配置阶段执行时只能依赖已定义的 Task
+//    dependsOn tasks.findByName('createPluginModuleDir') // 依赖 Task 实例对象，配置阶段执行时只能依赖已定义的 Task，如果找不到对应的 Task，findByName 会返回 null
+//    dependsOn 'createPluginModuleDir' // 依赖 Task 名称字符串，优点是可以依赖当前还未定义的 Task
+
+    doLast {
+        println "doLast 先进先出 | 删除已经存在的 ${pluginModuleName}/build.gradle 文件"
+        if (rootProject.file("${pluginModuleName}/build.gradle").exists()) {
+            rootProject.file("${pluginModuleName}/build.gradle").deleteOnExit()
+        } else {
+            rootProject.file("${pluginModuleName}/build.gradle").createNewFile()
+        }
+    }
+
+    doLast {
+        println "doLast 先进先出 | 创建 ${pluginModuleName}/build.gradle 文件"
+        rootProject.file("${pluginModuleName}/build.gradle").withWriter { Writer writer ->
+            writer.write("""\
+apply plugin: 'groovy' // 插件基于 groovy 编写，需要依赖 groovy 插件
+
+repositories { // 配置仓库
+    jcenter()
+    google()
+}
+
+dependencies {
+    // Gradle SDK
+    compile gradleApi() // 查看源码时，在 AS 右上角提示中选择「用户主目录/.gradle/wrapper/dists/gradle-版本号-all/hash值/gradle-版本号/src」
+    // Groovy SDK
+    compile localGroovy()
+    compile 'com.android.tools.build:gradle:3.1.0' // 便于查看 Android 源码
+}""")
+        }
+    }
+}
+
+// 依赖多个 Task 时可以混合依赖 Task 名称字符串和 Task 实例对象，参数为 List
+tasks.create(name: 'createSourceCode', group: 'bga', description: '创建源码目录', dependsOn: ['createBuildGradleFile', createPluginModuleDir]) {
+    // 依赖多个 Task 时可以混合依赖 Task 名称字符串和 Task 实例对象，用逗号分隔
+//    dependsOn createBuildGradleFile, 'createPluginModuleDir'
+    doLast {
+        rootProject.file("${pluginModuleName}/src/main/groovy/${pluginPackageName.replace('.', '/')}").mkdirs()
+    }
+    doLast {
+        rootProject.file("${pluginModuleName}/src/main/groovy/${pluginPackageName.replace('.', '/')}/${pluginSimpleClassName}.groovy").withWriter { Writer writer ->
+            writer.write("""\
+package $pluginPackageName;
+
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+
+class $pluginSimpleClassName implements Plugin<Project> {
+    @Override
+    void apply(Project project) {
+        println "project.name 应用了 HelloGradlePlugin"
+    }
+}
+""")
+        }
+    }
+}
+
+tasks.create(name: 'setPluginShortName', group: 'bga', description: '设置插件名称', dependsOn: 'createSourceCode') {
+    doFirst {
+        rootProject.file("${pluginModuleName}/src/main/resources/META-INF/gradle-plugins").mkdirs()
+    }
+    doLast {
+        rootProject.file("${pluginModuleName}/src/main/resources/META-INF/gradle-plugins/${pluginShortName}.properties").withWriter { Writer writer ->
+            writer.write("implementation-class=${pluginPackageName}.${pluginSimpleClassName}")
+        }
+    }
+}
+
+tasks.create(name: 'configSettings', group: 'bga', description: '配置 settings.gradle', dependsOn: 'setPluginShortName') {
+    doFirst {
+        def settingsContent = rootProject.file('settings.gradle').text
+        if (!settingsContent.contains(pluginModuleName)) {
+            rootProject.file('settings.gradle').withWriter { Writer writer ->
+                writer.write(settingsContent)
+                writer.write("\ninclude ':${pluginModuleName}'")
+            }
+        }
+    }
+}
