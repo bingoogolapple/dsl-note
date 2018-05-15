@@ -79,12 +79,18 @@ class $pluginSimpleClassName implements Plugin<Project> {
     }
 }
 
-tasks.create(name: 'setPluginShortName', group: 'bga', description: '设置插件名称', dependsOn: 'createSourceCode') {
+tasks.create(name: 'generateGradlePluginsDir', group: 'bga', description: '生成 gradle-plugins 目录', dependsOn: 'createSourceCode') {
+    outputs.file rootProject.file("${pluginModuleName}/src/main/resources/META-INF/gradle-plugins")
     doFirst {
-        rootProject.file("${pluginModuleName}/src/main/resources/META-INF/gradle-plugins").mkdirs()
+        outputs.files.singleFile.mkdirs()
     }
+}
+
+tasks.create(name: 'setPluginShortName', group: 'bga', description: '设置插件名称') {
+    // 通过使用一个 Task 的输出作为另一个 task 的输入，Gradle 就可以推断出依赖关系，所依赖的 Task 会自动运行
+    inputs.files generateGradlePluginsDir.outputs.files
     doLast {
-        rootProject.file("${pluginModuleName}/src/main/resources/META-INF/gradle-plugins/${pluginShortName}.properties").withWriter { Writer writer ->
+        rootProject.file("${inputs.files.singleFile}/${pluginShortName}.properties").withWriter { Writer writer ->
             writer.write("implementation-class=${pluginPackageName}.${pluginSimpleClassName}")
         }
     }
