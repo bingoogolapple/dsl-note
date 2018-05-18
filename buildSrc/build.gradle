@@ -1,0 +1,14 @@
+apply plugin: 'groovy' // 插件基于 groovy 编写，需要依赖 groovy 插件
+
+repositories { // 配置仓库
+    jcenter()
+    google()
+}
+
+dependencies {
+    // Gradle SDK
+    compile gradleApi() // 查看源码时，在 AS 右上角提示中选择「用户主目录/.gradle/wrapper/dists/gradle-版本号-all/hash值/gradle-版本号/src」
+    // Groovy SDK
+    compile localGroovy()
+    compileOnly 'com.android.tools.build:gradle:3.1.2' // 便于查看 Android 源码
+}

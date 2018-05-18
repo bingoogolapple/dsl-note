@@ -114,6 +114,12 @@ class ComposeListener implements TaskExecutionGraphListener, TaskActionListener,
         log "⑨执行阶段完毕「1」BuildListener buildFinished ${result} ${result.action}"
 
         println "\nTask spend time:"
+        times.sort(new Comparator<List>() {
+            @Override
+            int compare(List left, List right) {
+                return (right.get(0) as long) - (left.get(0) as long)
+            }
+        })
         times.each { time ->
 //            if (time[0] >= 50) {
             printf "%7sms  %s\n", time
@@ -171,3 +177,4 @@ gradle.taskGraph.afterTask { Task task, TaskState state ->
 gradle.buildFinished { BuildResult buildResult ->
     ComposeListener.log "⑨执行阶段完毕「2」buildFinished ${buildResult} ${buildResult.action}"
 }
+include ':buildSrc'

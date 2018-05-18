@@ -1,6 +1,10 @@
+import cn.bingoogolapple.gradle.note.extension.InnerExtension
+import cn.bingoogolapple.gradle.note.extension.OuterExtension
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'hello-gradle-plugin'
 
 android {
     compileSdkVersion rootProject.ext.android.compileSdkVersion
@@ -22,7 +26,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
 
@@ -30,4 +34,20 @@ dependencies {
 
 //    implementation gradleApi()
     implementation 'com.android.tools.build:gradle:3.1.2'
+}
+
+outer {
+    name 'OuterExtension' // 通过 project.extensions.create('outer', OuterExtension) 创建的可以不用写等号
+    innerOne {
+        println 'innerOne delegate is ' + delegate
+        name = 'OneInnerExtension'
+    }
+    innerTwo {
+        println 'innerTwo delegate is ' + delegate
+        name = 'TwoInnerExtension'
+    }
+    innerThree {
+        println 'innerThree delegate is ' + delegate
+        name 'ThreeInnerExtension' // 通过 project.outer.extensions.create('innerThree', InnerExtension) 创建的可以不用写等号
+    }
 }
