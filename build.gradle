@@ -18,7 +18,7 @@ buildscript { ScriptHandler scriptHandler ->
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'cz.malohlava:visteg:1.0.3' // Task 依赖关系图生成插件。https://github.com/mmalohlava/gradle-visteg
         classpath 'gradle.plugin.com.dorongold.plugins:task-tree:1.3' // 将项目下的 Task 依赖关系以树的形式输出到终端 https://github.com/dorongold/gradle-task-tree
-        classpath 'org.codehaus.groovy:groovy-all:2.4.15' // 引入这个便于查看 groovy 源码
+//        classpath 'org.codehaus.groovy:groovy-all:2.4.15' // 引入这个便于查看 groovy 源码
     }
 }
 // 引入 Task 依赖关系图生成的插件
@@ -82,4 +82,4 @@ apply from: "${rootDir}/file_commandline.gradle"
 apply from: "${rootDir}/task.gradle"
 apply from: "${rootDir}/releaseinfo.gradle"
 apply from: "${rootDir}/extension_mechanism.gradle"
-apply from: "${rootDir}/createPluginModule.gradle"
+apply from: "${rootDir}/GradlePluginTemplate.gradle"

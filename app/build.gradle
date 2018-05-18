@@ -1,7 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
-apply plugin: 'hello-gradle-plugin'
 
 android {
     compileSdkVersion rootProject.ext.android.compileSdkVersion
@@ -28,23 +27,34 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
 
     implementation project(':dirone:moduleone')
-
-//    implementation gradleApi()
-    implementation 'com.android.tools.build:gradle:3.1.2'
 }
 
+
+//apply plugin: cn.bingoogolapple.gradle.note.HelloGradlePlugin
+apply plugin: 'hello-gradle-plugin'
 outer {
+    def mapOne = ['a': 'bc', 'b': 'cd']
+    def mapTwo = ['c': 'de']
+
     name 'OuterExtension' // 通过 project.extensions.create('outer', OuterExtension) 创建的可以不用写等号
     innerOne {
         println 'innerOne delegate is ' + delegate
         name = 'OneInnerExtension'
+        complex mapOne
+        complex mapTwo
     }
     innerTwo {
         println 'innerTwo delegate is ' + delegate
         name = 'TwoInnerExtension'
+        complex mapOne
+        complex mapTwo
     }
     innerThree {
         println 'innerThree delegate is ' + delegate
         name 'ThreeInnerExtension' // 通过 project.outer.extensions.create('innerThree', InnerExtension) 创建的可以不用写等号
+        complex mapOne
+        complex mapTwo
     }
+    complex 'abc', 'bcd'
+    complex 'cde', 'def'
 }

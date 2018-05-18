@@ -4,12 +4,14 @@ import org.gradle.api.Action
 
 class OuterExtension {
     String name
-    InnerExtension oneInnerExtension
-    InnerExtension twoInnerExtension
+    final InnerExtension oneInnerExtension
+    final InnerExtension twoInnerExtension
+    final List<String> complexParam
 
     OuterExtension() {
         oneInnerExtension = new InnerExtension()
         twoInnerExtension = new InnerExtension()
+        complexParam = new ArrayList<>()
     }
 
     void innerOne(Action<InnerExtension> action) {
@@ -22,8 +24,12 @@ class OuterExtension {
         closure.call()
     }
 
+    void complex(String... args) {
+        complexParam.addAll(args)
+    }
+
     @Override
     String toString() {
-        return "${this.class.simpleName} | name = $name"
+        return "${this.class.simpleName} | name is $name | complexParam is $complexParam"
     }
 }

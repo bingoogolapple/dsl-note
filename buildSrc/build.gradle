@@ -14,7 +14,7 @@ dependencies {
     compileOnly 'com.android.tools.build:gradle:3.1.2' // 便于查看 Android 源码
 }
 
-// 用于发布 gradle 插件到 maven 私服，执行 gradle clean build uploadArchives 即可
+// 用于发布 gradle 插件到 maven 私服，执行 gradle :buildSrc:clean :buildSrc:build :buildSrc:uploadArchives 即可发布插件到 maven 私服
 uploadArchives {
     repositories.mavenDeployer {
         repository(url: uri("${System.properties['user.home']}/.gradle/local_repo"))
@@ -22,5 +22,9 @@ uploadArchives {
         pom.version = '1.0.0'
         pom.artifactId = 'first-gradle-plugin'
         pom.groupId = 'cn.bingoogolapple'
+    }
+
+    doLast {
+        println "在根工程的 dependencies 中添加 classpath 'cn.bingoogolapple:first-gradle-plugin:1.0.0'"
     }
 }
