@@ -128,13 +128,17 @@ task taskJ {
 }
 // taskJ 不依赖 taskK，但让 taskJ 在 taskK 之后执行
 taskJ.mustRunAfter 'taskK'
+//taskJ.shouldRunAfter 'taskK'
 // 不能同时指定 taskK.dependsOn taskJ 和 taskJ.mustRunAfter taskK
+// 能同时指定 taskK.dependsOn taskJ 和 taskJ.shouldRunAfter taskK
 task taskK {
     group = 'bga'
     doFirst {
         println "taskK"
     }
 }
+//taskK.dependsOn taskJ
+
 task taskL {
     dependsOn taskJ, taskK
     group = 'bga'
@@ -142,6 +146,7 @@ task taskL {
         println "taskL"
     }
 }
+
 task taskM {
     group = 'bga'
     doFirst {
@@ -180,3 +185,23 @@ task taskO {
  * taskM、taskN 可以用来清理 taskO 中的资源
  */
 taskO.finalizedBy taskM, taskN
+
+task taskP {
+    onlyIf {
+        /**
+         * enabled = false || onlyIf 返回 false，SKIPPED
+         * 当 enabled = true 时 onlyIf 才会执行
+         */
+        println "onlyIf 在 beforeTask 之后，beforeActions 之前执行"
+        return true
+    }
+
+    doLast {
+        println "taskP doLast1"
+    }
+
+    doLast {
+        println "taskP doLast2"
+    }
+}
+//taskP.enabled = false
