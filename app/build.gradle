@@ -1,6 +1,3 @@
-import cn.bingoogolapple.gradle.note.extension.InnerExtension
-import cn.bingoogolapple.gradle.note.extension.OuterExtension
-
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'

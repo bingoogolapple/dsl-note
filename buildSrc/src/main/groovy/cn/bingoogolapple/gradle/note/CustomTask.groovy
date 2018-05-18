@@ -6,7 +6,7 @@ import org.gradle.api.tasks.TaskAction
 class CustomTask extends DefaultTask {
 
     CustomTask() {
-        group = 'buildSrc'
+        group = 'first-gradle-plugin'
         description = '演示自定义 Task'
     }
 

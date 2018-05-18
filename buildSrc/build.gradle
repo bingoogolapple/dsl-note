@@ -1,4 +1,5 @@
 apply plugin: 'groovy' // 插件基于 groovy 编写，需要依赖 groovy 插件
+apply plugin: 'maven' // 用于发布 gradle 插件到 maven 私服
 
 repositories { // 配置仓库
     jcenter()
@@ -11,4 +12,15 @@ dependencies {
     // Groovy SDK
     compile localGroovy()
     compileOnly 'com.android.tools.build:gradle:3.1.2' // 便于查看 Android 源码
+}
+
+// 用于发布 gradle 插件到 maven 私服，执行 gradle clean build uploadArchives 即可
+uploadArchives {
+    repositories.mavenDeployer {
+        repository(url: uri("${System.properties['user.home']}/.gradle/local_repo"))
+
+        pom.version = '1.0.0'
+        pom.artifactId = 'first-gradle-plugin'
+        pom.groupId = 'cn.bingoogolapple'
+    }
 }

@@ -3,6 +3,9 @@ buildscript { ScriptHandler scriptHandler ->
     apply from: 'config.gradle'
     // Executes the given closure against the RepositoryHandler for this ScriptHandler.
     repositories { RepositoryHandler repositoryHandler ->
+        maven {
+            url uri("${System.properties['user.home']}/.gradle/local_repo")
+        }
         google()
         jcenter()
         maven { // task-tree 插件需要用到该库
