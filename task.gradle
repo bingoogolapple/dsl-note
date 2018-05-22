@@ -85,6 +85,7 @@ task taskF {
     }
 }
 
+// ==========================================================
 task taskG {
     group = 'bga'
     doFirst {
@@ -94,6 +95,7 @@ task taskG {
 
 taskG.dependsOn taskA, 'taskD'
 
+// ==========================================================
 task taskH {
     group = 'bga'
     doFirst {
@@ -102,6 +104,7 @@ task taskH {
 }
 tasks.findByName('taskH').dependsOn taskA, 'taskD'
 
+// ==========================================================
 task taskI {
     group = 'bga'
     // 这里只能找到当前 Task 定义之前定义的 task
@@ -120,6 +123,7 @@ task taskI {
 //    }
 //}
 
+// ==========================================================
 task taskJ {
     group = 'bga'
     doFirst {
@@ -147,6 +151,7 @@ task taskL {
     }
 }
 
+// ==========================================================
 task taskM {
     group = 'bga'
     doFirst {
@@ -186,7 +191,9 @@ task taskO {
  */
 taskO.finalizedBy taskM, taskN
 
+// ==========================================================
 task taskP {
+    group 'bga'
     onlyIf {
         /**
          * enabled = false || onlyIf 返回 false，SKIPPED
@@ -205,3 +212,83 @@ task taskP {
     }
 }
 //taskP.enabled = false
+
+// ==========================================================
+task taskQ(type: Copy) {
+    description 'taskQ 的描述'
+    from 'settings.gradle'
+    into buildDir
+}
+
+task taskQ(overwrite: true) {
+    group 'bga'
+    doLast {
+        println "覆盖拷贝任务"
+    }
+}
+// ==========================================================
+task taskR {
+    group 'bga'
+    doFirst {
+        println "taskR doFirst"
+        // 如果 StopExecutionException 是被一个任务要执行的动作抛出的, 这个动作之后的执行以及所有紧跟它的动作都会被跳过. 构建将会继续执行下一个任务
+        throw new StopExecutionException()
+    }
+    doLast {
+        println "taskR doLast"
+    }
+}
+
+task taskS {
+    group 'bga'
+    dependsOn taskR
+    doFirst {
+        println "taskS doFirst"
+    }
+}
+// ==========================================================
+/**
+ * 当一个任务是首次执行时，Gradle 会取一个输入的快照，该快照包含组输入文件和每个文件的内容的散列
+ * 然后当 Gradle 执行任务成功后，Gradle 会获得一个输出的快照，该快照包含输出文件和每个文件的内容的散列
+ * Gradle 会保留这两个快照用来在该任务的下一次执行时进行判断
+ *
+ * 之后, 每次在任务执行之前, Gradle 都会为输入和输出取一个新的快照, 如果这个快照和之前的快照一样, Gradle 就会假定这个任务已经是最新的 (up-to-date) 并且跳过任务, 反之亦然
+ * 需要注意的是, 如果一个任务有指定的输出目录, 自从该任务上次执行以来被加入到该目录的任务文件都会被忽略, 并且不会引起任务过时 (out of date). 这是因为不相关任务也许会共用同一个输出目录
+ */
+/**
+ * 如果一个任务只定义了输出，并且输出不变的话，它就会被视为 up-to-date
+ * 一个任务如果没有定义输出的话，那么它永远都没用办法判断 up-to-date
+ * 对于某些场景，比如一个任务的输出不是文件，或者更复杂的场景，TaskOutputs.upToDateWhen 方法会计算任务的输出是否应被视为最新
+ */
+class TestInputOutputTask extends DefaultTask {
+//    @Input // the up-to-date check is only dependent on the path and not the contents of the file or directory
+    @InputFile
+    // This will cause the task to be considered out-of-date when the file path or contents have changed
+    File srcFile
+    @OutputDirectory
+    File destDir
+
+    TestInputOutputTask() {
+        group 'bga'
+    }
+
+    @TaskAction
+    void run() {
+        println name
+        destDir.mkdirs()
+        def json = new groovy.json.JsonSlurper().parseText(srcFile.text)
+        json.each { item ->
+            def destFile = new File(destDir, "${item.name}.txt")
+            destFile.text = item.desc
+        }
+    }
+}
+
+task testInputOutputOne(type: TestInputOutputTask) {
+    srcFile = file("data/data.json")
+    destDir = new File(buildDir, 'generated')
+
+//    outputs.upToDateWhen {
+//        true
+//    }
+}
