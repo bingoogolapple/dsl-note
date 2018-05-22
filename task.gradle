@@ -260,35 +260,80 @@ task taskS {
  * 一个任务如果没有定义输出的话，那么它永远都没用办法判断 up-to-date
  * 对于某些场景，比如一个任务的输出不是文件，或者更复杂的场景，TaskOutputs.upToDateWhen 方法会计算任务的输出是否应被视为最新
  */
-class TestInputOutputTask extends DefaultTask {
-//    @Input // the up-to-date check is only dependent on the path and not the contents of the file or directory
-    @InputFile
-    // This will cause the task to be considered out-of-date when the file path or contents have changed
-    File srcFile
-    @OutputDirectory
-    File destDir
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 
-    TestInputOutputTask() {
-        group 'bga'
+class CreateDataJsonTask extends DefaultTask {
+    // 发生变化时会导致 out-of-date。如果添加到文件上，内容变化不会导致 out-of-date
+    @Input
+    Integer fileCount
+    // 文件路径或内容的变化都会导致 out-of-date
+    @OutputFile
+    File outputFile
+
+    CreateDataJsonTask() {
+        fileCount = project.hasProperty('fileCount') ? project.getProperty('fileCount') as Integer : 2
+        String fileName = project.hasProperty('fileName') ? project.getProperty('fileName') as String : 'data'
+        outputFile = project.rootProject.file("${project.rootProject.buildDir}/data/${fileName}.json")
     }
 
     @TaskAction
     void run() {
-        println name
-        destDir.mkdirs()
-        def json = new groovy.json.JsonSlurper().parseText(srcFile.text)
+        def list = []
+        fileCount.times { number ->
+            list.add([name: "文件${number + 1}", desc: "文件${number + 1}的内容"])
+        }
+
+        outputFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(list))
+
+        println "$name 执行了"
+    }
+}
+
+class CreateDataTxtTask extends DefaultTask {
+    // 发生变化时会导致 out-of-date。如果添加到文件上，内容变化不会导致 out-of-date
+//    @Input
+    // 文件路径或内容的变化都会导致 out-of-date
+    @InputFile
+    File srcFile
+    // 目录位置或者内容发生变化是都会导致 out-of-date
+    @OutputDirectory
+    File destDir
+
+    @TaskAction
+    void run() {
+        if (!destDir.exists()) {
+            destDir.mkdirs()
+        }
+
+        def json = new JsonSlurper().parseText(srcFile.text)
         json.each { item ->
             def destFile = new File(destDir, "${item.name}.txt")
             destFile.text = item.desc
         }
+        println "$name 执行了"
     }
 }
 
-task testInputOutputOne(type: TestInputOutputTask) {
-    srcFile = file("data/data.json")
-    destDir = new File(buildDir, 'generated')
-
+task taskR(type: CreateDataJsonTask) {
 //    outputs.upToDateWhen {
-//        true
+//        return false
 //    }
+}
+
+task taskQ(type: CreateDataTxtTask) {
+    inputs.files taskR.outputs.files
+    srcFile taskR.outputFile
+//    srcFile project.file("$buildDir/data/data.json")
+    destDir new File(buildDir, 'generated')
+}
+
+task packageTxtFiles(type: Zip) {
+    from taskQ.outputs
+    destinationDir buildDir
+    baseName 'test'
+
+    doLast {
+        println "$name 执行了"
+    }
 }
