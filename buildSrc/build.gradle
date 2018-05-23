@@ -1,7 +1,7 @@
 apply plugin: 'groovy' // 插件基于 groovy 编写，需要依赖 groovy 插件
-apply plugin: 'maven' // 用于发布 gradle 插件到 maven 私服
 
-repositories { // 配置仓库
+// 配置仓库
+repositories {
     jcenter()
     google()
 }
@@ -12,19 +12,37 @@ dependencies {
     // Groovy SDK
     compile localGroovy()
     compileOnly 'com.android.tools.build:gradle:3.1.2' // 便于查看 Android 源码
+    // 还可以添加该插件依赖的其他库
 }
 
-// 用于发布 gradle 插件到 maven 私服，执行 gradle :buildSrc:clean :buildSrc:build :buildSrc:uploadArchives 即可发布插件到 maven 私服
+// =============== 发布 gradle 插件到 maven 私服 START ===============
+apply plugin: 'maven'
+// 执行 gradle :buildSrc:clean :buildSrc:build :buildSrc:uploadArchives 即可发布插件到 maven 私服
 uploadArchives {
     repositories.mavenDeployer {
-        repository(url: uri("${System.properties['user.home']}/.gradle/local_repo"))
+        repository(url: uri("${System.properties['user.home']}/.gradle/local_repo")) // 这里发布到本地仓库「用户主目录/.gradle/local_repo」便于测试
 
-        pom.version = '1.0.0'
-        pom.artifactId = 'first-gradle-plugin'
-        pom.groupId = 'cn.bingoogolapple'
-    }
-
-    doLast {
-        println "在根工程的 dependencies 中添加 classpath 'cn.bingoogolapple:first-gradle-plugin:1.0.0'"
+        pom.version = '1.0.0' // maven 中插件的版本
+        pom.artifactId = 'first-gradle-plugin' // maven 中构件的 id
+        pom.groupId = 'cn.bingoogolapple' // maven 中组 id
     }
 }
+// =============== 发布 gradle 插件到 maven 私服 END ===============
+
+/*
+在根工程的 build.gradle 中新增如下代码
+buildscript {
+    repositories {
+        // ======== 新增的 START | 1.配置仓库地址 ========
+        maven {
+            url uri("${System.properties['user.home']}/.gradle/local_repo")
+        }
+        // ======== 新增的 END | 1.配置仓库地址 ========
+    }
+    dependencies {
+        // ======== 新增的 START | 2.将插件添加到 classpath 中 ========
+        classpath 'cn.bingoogolapple:first-gradle-plugin:1.0.0'
+        // ======== 新增的 END | 2.将插件添加到 classpath 中 ========
+    }
+}
+*/

@@ -1,33 +1,36 @@
 // 插件相关配置
-def pluginModuleName = 'buildSrc'
-def pluginPackageName = 'cn.bingoogolapple.gradle.note'
-def pluginSimpleClassName = 'HelloGradlePlugin'
-def pluginShortName = 'hello-gradle-plugin'
+def pluginModuleName = 'buildSrc' // 在哪个模块生成插件
+def pluginPackageName = 'cn.bingoogolapple.gradle.note' // 插件包名
+def pluginSimpleClassName = 'HelloGradlePlugin' // 插件类名
+def pluginTaskName = 'HelloGradleTask' // 插件中自定义任务的类名
+def pluginShortName = 'hello-gradle-plugin' // 插件的短名称
 // 发布插件到私服相关配置
-def pluginVersionName = '1.0.0'
-def pluginArtifactId = 'first-gradle-plugin'
-def pluginGroupId = 'cn.bingoogolapple'
+def pluginVersionName = '1.0.0' // maven 中插件的版本
+def pluginArtifactId = 'first-gradle-plugin' // maven 中构件的 id
+def pluginGroupId = 'cn.bingoogolapple' // maven 中组 id
 
 // task 任务名称
 task createPluginModuleDir {
     group 'gradle-plugin-template'
-    description '创建插件模块目录'
+    description '1.创建插件模块目录'
     doFirst {
         println "doFirst 后进先出 | 2.创建 ${pluginModuleName} 目录"
-        rootProject.file(pluginModuleName).mkdir()
+        rootProject.file(pluginModuleName).mkdirs()
     }
     doFirst {
+        println description
         println "doFirst 后进先出 | 1.删除已存在的 ${pluginModuleName} 目录"
         rootProject.file(pluginModuleName).deleteOnExit()
     }
 }
 
-tasks.create(name: 'createBuildGradleFile', group: 'gradle-plugin-template', description: '创建 build.gradle 文件', dependsOn: 'createPluginModuleDir') {
+tasks.create(name: 'createBuildGradleFile', group: 'gradle-plugin-template', description: '2.创建 build.gradle 文件', dependsOn: 'createPluginModuleDir') {
 //    dependsOn createPluginModuleDir // 依赖 Task 实例对象，配置阶段执行时只能依赖已定义的 Task
 //    dependsOn tasks.findByName('createPluginModuleDir') // 依赖 Task 实例对象，配置阶段执行时只能依赖已定义的 Task，如果找不到对应的 Task，findByName 会返回 null
 //    dependsOn 'createPluginModuleDir' // 依赖 Task 名称字符串，优点是可以依赖当前还未定义的 Task
 
     doLast {
+        println description
         println "doLast 先进先出 | 删除已经存在的 ${pluginModuleName}/build.gradle 文件"
         if (rootProject.file("${pluginModuleName}/build.gradle").exists()) {
             rootProject.file("${pluginModuleName}/build.gradle").deleteOnExit()
@@ -41,9 +44,9 @@ tasks.create(name: 'createBuildGradleFile', group: 'gradle-plugin-template', des
         rootProject.file("${pluginModuleName}/build.gradle").withWriter { Writer writer ->
             writer.write("""\
 apply plugin: 'groovy' // 插件基于 groovy 编写，需要依赖 groovy 插件
-apply plugin: 'maven' // 用于发布 gradle 插件到 maven 私服
 
-repositories { // 配置仓库
+// 配置仓库
+repositories {
     jcenter()
     google()
 }
@@ -54,32 +57,51 @@ dependencies {
     // Groovy SDK
     compile localGroovy()
     compileOnly 'com.android.tools.build:gradle:3.1.2' // 便于查看 Android 源码
+    // 还可以添加该插件依赖的其他库
 }
 
-// 用于发布 gradle 插件到 maven 私服，执行 gradle :${pluginModuleName}:clean :${pluginModuleName}:build :${pluginModuleName}:uploadArchives 即可发布插件到 maven 私服
+// =============== 发布 gradle 插件到 maven 私服 START ===============
+apply plugin: 'maven'
+// 执行 gradle :${pluginModuleName}:clean :${pluginModuleName}:build :${pluginModuleName}:uploadArchives 即可发布插件到 maven 私服
 uploadArchives {
     repositories.mavenDeployer {
-        repository(url: uri("\${System.properties['user.home']}/.gradle/local_repo"))
+        repository(url: uri("\${System.properties['user.home']}/.gradle/local_repo")) // 这里发布到本地仓库「用户主目录/.gradle/local_repo」便于测试
 
-        pom.version = '$pluginVersionName'
-        pom.artifactId = '$pluginArtifactId'
-        pom.groupId = '$pluginGroupId'
-    }
-
-    doLast {
-        println "在根工程的 dependencies 中添加 classpath '$pluginGroupId:$pluginArtifactId:$pluginVersionName'"
+        pom.version = '$pluginVersionName' // maven 中插件的版本
+        pom.artifactId = '$pluginArtifactId' // maven 中构件的 id
+        pom.groupId = '$pluginGroupId' // maven 中组 id
     }
 }
+// =============== 发布 gradle 插件到 maven 私服 END ===============
+
+/*
+在根工程的 build.gradle 中新增如下代码
+buildscript {
+    repositories {
+        // ======== 新增的 START | 1.配置仓库地址 ========
+        maven {
+            url uri("\${System.properties['user.home']}/.gradle/local_repo")
+        }
+        // ======== 新增的 END | 1.配置仓库地址 ========
+    }
+    dependencies {
+        // ======== 新增的 START | 2.将插件添加到 classpath 中 ========
+        classpath '$pluginGroupId:$pluginArtifactId:$pluginVersionName'
+        // ======== 新增的 END | 2.将插件添加到 classpath 中 ========
+    }
+}
+*/
 """)
         }
     }
 }
 
 // 依赖多个 Task 时可以混合依赖 Task 名称字符串和 Task 实例对象，参数为 List
-tasks.create(name: 'createSourceCode', group: 'gradle-plugin-template', description: '创建源码目录', dependsOn: ['createBuildGradleFile', createPluginModuleDir]) {
+tasks.create(name: 'createSourceCode', group: 'gradle-plugin-template', description: '3.创建源码目录', dependsOn: ['createBuildGradleFile', createPluginModuleDir]) {
     // 依赖多个 Task 时可以混合依赖 Task 名称字符串和 Task 实例对象，用逗号分隔
 //    dependsOn createBuildGradleFile, 'createPluginModuleDir'
     doLast {
+        println description
         rootProject.file("${pluginModuleName}/src/main/groovy/${pluginPackageName.replace('.', '/')}/extension").mkdirs()
     }
     doLast {
@@ -87,14 +109,18 @@ tasks.create(name: 'createSourceCode', group: 'gradle-plugin-template', descript
             writer.write("""\
 package ${pluginPackageName}.extension
 
+// 嵌套内层扩展
 class InnerExtension {
+    // 简单类型扩展
     String name
+    // 复杂类型扩展
     final Map<String, String> complexParam
 
     InnerExtension() {
         complexParam = new HashMap()
     }
 
+    // 复杂类型扩展
     void complex(Map<String, String> arg) {
         complexParam.putAll(arg)
     }
@@ -114,10 +140,14 @@ package ${pluginPackageName}.extension
 
 import org.gradle.api.Action
 
+// 外层扩展
 class OuterExtension {
+    // 简单类型扩展
     String name
+    // 嵌套扩展
     final InnerExtension oneInnerExtension
     final InnerExtension twoInnerExtension
+    // 复杂类型扩展
     final List<String> complexParam
 
     OuterExtension() {
@@ -126,16 +156,19 @@ class OuterExtension {
         complexParam = new ArrayList<>()
     }
 
+    // 通过 Action 嵌套扩展
     void innerOne(Action<InnerExtension> action) {
         action.execute(oneInnerExtension)
     }
-
+    
+    // 通过闭包嵌套扩展
     void innerTwo(Closure closure) {
         closure.delegate = twoInnerExtension
         closure.resolveStrategy = Closure.DELEGATE_FIRST
         closure.call()
     }
 
+    // 复杂类型扩展
     void complex(String... args) {
         complexParam.addAll(args)
     }
@@ -149,26 +182,27 @@ class OuterExtension {
         }
     }
     doLast {
-        rootProject.file("${pluginModuleName}/src/main/groovy/${pluginPackageName.replace('.', '/')}/CustomTask.groovy").withWriter { Writer writer ->
+        rootProject.file("${pluginModuleName}/src/main/groovy/${pluginPackageName.replace('.', '/')}/${pluginTaskName.capitalize()}.groovy").withWriter { Writer writer ->
             writer.write("""\
 package $pluginPackageName
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 
-class CustomTask extends DefaultTask {
+class ${pluginTaskName.capitalize()} extends DefaultTask {
 
-    CustomTask() {
+    ${pluginTaskName.capitalize()}() {
         group = '$pluginArtifactId'
         description = '演示自定义 Task'
     }
 
     @TaskAction
     void run() {
-        println "CustomTask action outer \$project.outer"
-        println "CustomTask action innerOne \$project.outer.oneInnerExtension"
-        println "CustomTask action innerTwo \$project.outer.twoInnerExtension"
-        println "CustomTask action innerThree \$project.outer.innerThree"
+        // 执行阶段能取到扩展属性的值
+        println "${pluginTaskName.capitalize()} action outer \$project.outer"
+        println "${pluginTaskName.capitalize()} action innerOne \$project.outer.oneInnerExtension"
+        println "${pluginTaskName.capitalize()} action innerTwo \$project.outer.twoInnerExtension"
+        println "${pluginTaskName.capitalize()} action innerThree \$project.outer.innerThree"
     }
 }
 """)
@@ -187,25 +221,28 @@ import org.gradle.api.Project
 class $pluginSimpleClassName implements Plugin<Project> {
     @Override
     void apply(Project project) {
-        println "\$project.name 应用了 HelloGradlePlugin"
+        println "\$project.name 应用了 $pluginSimpleClassName"
 
-        // 添加扩展
+        // 通过 project.extensions.create 创建外层扩展
         project.extensions.create('outer', OuterExtension)
+        // 创建好外层扩展 outer 后，通过 project.outer.extensions.create 创建嵌套内层扩展
         project.outer.extensions.create('innerThree', InnerExtension)
 
-        project.task('customTask', type: CustomTask)
+        // 创建自定义任务
+        project.task('${pluginTaskName.uncapitalize()}', type: ${pluginTaskName.capitalize()})
 
-        // 这里取不到值，需要在配置阶段结束后才能取到值
-        println "HelloGradlePlugin 配置阶段 outer \$project.outer"
-        println "HelloGradlePlugin 配置阶段 innerOne \$project.outer.oneInnerExtension"
-        println "HelloGradlePlugin 配置阶段 innerTwo \$project.outer.twoInnerExtension"
-        println "HelloGradlePlugin 配置阶段 innerThree \$project.outer.innerThree"
+        // 这里是配置阶段，取不到扩展属性的值
+        println "$pluginSimpleClassName 配置阶段 outer \$project.outer"
+        println "$pluginSimpleClassName 配置阶段 innerOne \$project.outer.oneInnerExtension"
+        println "$pluginSimpleClassName 配置阶段 innerTwo \$project.outer.twoInnerExtension"
+        println "$pluginSimpleClassName 配置阶段 innerThree \$project.outer.innerThree"
 
         project.afterEvaluate { Project target ->
-            println "HelloGradlePlugin 配置阶段结束后 outer \$target.outer"
-            println "HelloGradlePlugin 配置阶段结束后 innerOne \$target.outer.oneInnerExtension"
-            println "HelloGradlePlugin 配置阶段结束后 innerTwo \$target.outer.twoInnerExtension"
-            println "HelloGradlePlugin 配置阶段结束后 innerThree \$target.outer.innerThree"
+            // 需要在配置阶段结束后才能取到扩展属性的值
+            println "$pluginSimpleClassName 配置阶段结束后 outer \$target.outer"
+            println "$pluginSimpleClassName 配置阶段结束后 innerOne \$target.outer.oneInnerExtension"
+            println "$pluginSimpleClassName 配置阶段结束后 innerTwo \$target.outer.twoInnerExtension"
+            println "$pluginSimpleClassName 配置阶段结束后 innerThree \$target.outer.innerThree"
         }
     }
 }
@@ -214,25 +251,28 @@ class $pluginSimpleClassName implements Plugin<Project> {
     }
 }
 
-tasks.create(name: 'generateGradlePluginsDir', group: 'gradle-plugin-template', description: '生成 gradle-plugins 目录', dependsOn: 'createSourceCode') {
+tasks.create(name: 'generateGradlePluginsDir', group: 'gradle-plugin-template', description: '4.生成 gradle-plugins 目录', dependsOn: 'createSourceCode') {
     outputs.file rootProject.file("${pluginModuleName}/src/main/resources/META-INF/gradle-plugins")
     doFirst {
+        println description
         outputs.files.singleFile.mkdirs()
     }
 }
 
-tasks.create(name: 'setPluginShortName', group: 'gradle-plugin-template', description: '设置插件名称') {
+tasks.create(name: 'setPluginShortName', group: 'gradle-plugin-template', description: '5.设置插件名称') {
     // 通过使用一个 Task 的输出作为另一个 task 的输入，Gradle 就可以推断出依赖关系，所依赖的 Task 会自动运行
     inputs.files generateGradlePluginsDir.outputs.files
     doLast {
+        println description
         rootProject.file("${inputs.files.singleFile}/${pluginShortName}.properties").withWriter { Writer writer ->
             writer.write("implementation-class=${pluginPackageName}.${pluginSimpleClassName}")
         }
     }
 }
 
-tasks.create(name: 'configSettings', group: 'gradle-plugin-template', description: '配置 settings.gradle', dependsOn: 'setPluginShortName') {
+tasks.create(name: 'configSettings', group: 'gradle-plugin-template', description: '6.配置 settings.gradle', dependsOn: 'setPluginShortName') {
     doFirst {
+        println description
         def settingsContent = rootProject.file('settings.gradle').text
         if (!settingsContent.contains(pluginModuleName)) {
             rootProject.file('settings.gradle').withWriter { Writer writer ->

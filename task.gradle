@@ -315,21 +315,22 @@ class CreateDataTxtTask extends DefaultTask {
     }
 }
 
-task taskR(type: CreateDataJsonTask) {
+task taskT(type: CreateDataJsonTask) {
 //    outputs.upToDateWhen {
 //        return false
 //    }
 }
 
-task taskQ(type: CreateDataTxtTask) {
-    inputs.files taskR.outputs.files
-    srcFile taskR.outputFile
+task taskU(type: CreateDataTxtTask) {
+    // 必须要输入输出的所有文件才能推导依赖关系
+    inputs.files taskT.outputs.files
+    srcFile taskT.outputFile
 //    srcFile project.file("$buildDir/data/data.json")
     destDir new File(buildDir, 'generated')
 }
 
 task packageTxtFiles(type: Zip) {
-    from taskQ.outputs
+    from taskU.outputs
     destinationDir buildDir
     baseName 'test'
 
