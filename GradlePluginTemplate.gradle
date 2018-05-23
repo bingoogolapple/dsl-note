@@ -162,7 +162,7 @@ class OuterExtension {
     }
     
     // 通过闭包嵌套扩展
-    void innerTwo(Closure closure) {
+    void innerTwo(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = InnerExtension) Closure closure) {
         closure.delegate = twoInnerExtension
         closure.resolveStrategy = Closure.DELEGATE_FIRST
         closure.call()
