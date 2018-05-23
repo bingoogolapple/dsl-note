@@ -338,3 +338,123 @@ task packageTxtFiles(type: Zip) {
         println "$name 执行了"
     }
 }
+
+class IncrementalReverseTask extends DefaultTask {
+    @InputDirectory
+    File inputDir
+    @OutputDirectory
+    File outputDir
+    @Input
+    String inputProperty
+
+    IncrementalReverseTask() {
+//        outputs.upToDateWhen {
+//            return false
+//        }
+    }
+
+    @TaskAction
+    void execute(IncrementalTaskInputs inputs) {
+        println inputs.incremental ? 'CHANGED inputs considered out of date' : 'ALL inputs considered out of date'
+        if (!inputs.incremental) {
+            project.delete(outputDir.listFiles())
+        }
+
+        inputs.outOfDate { change ->
+            println "out of date: ${change.file.name}"
+            def targetFile = new File(outputDir, change.file.name)
+            targetFile.text = change.file.text.reverse()
+        }
+
+        inputs.removed { change ->
+            println "removed: ${change.file.name}"
+            def targetFile = new File(outputDir, change.file.name)
+            targetFile.delete()
+        }
+    }
+}
+
+task incrementalReverse(type: IncrementalReverseTask) {
+    inputDir = file("$buildDir/inputs")
+    outputDir = file("$buildDir/outputs")
+    inputProperty = project.properties['taskInputProperty'] ?: 'original'
+}
+
+/*
+初始化测试数据  gradle -q initData incrementalReverse
+
+ALL inputs considered out of date
+out of date: 3.txt
+out of date: 2.txt
+out of date: 1.txt
+ */
+task initData {
+    doLast {
+        File inputDir = file("$buildDir/inputs")
+        if (!inputDir.exists()) {
+            inputDir.mkdirs()
+        }
+        project.delete(inputDir.listFiles())
+
+        3.times {
+            new File(inputDir, "${it + 1}.txt").text = "Content for file ${it + 1}"
+        }
+    }
+}
+/*
+修改一个输入文件，新增一个输入文件  gradle -q updateInputs incrementalReverse
+
+CHANGED inputs considered out of date
+out of date: 1.txt
+out of date: 4.txt
+ */
+task updateInputs {
+    doLast {
+        file("$buildDir/inputs/1.txt").text = 'Changed content for existing file 1'
+        file("$buildDir/inputs/4.txt").text = 'Content for new file 4'
+    }
+}
+/*
+删除一个输入文件  gradle -q removeInput incrementalReverse
+
+CHANGED inputs considered out of date
+removed: 3.txt
+ */
+task removeInput() {
+    doLast {
+        file("$buildDir/inputs/3.txt").delete()
+    }
+}
+
+/*
+新增1个输出文件 gradle -q addOutput incrementalReverse
+
+ */
+task addOutput {
+    doLast {
+        file("$buildDir/outputs/5.txt").text = 'Content for new file 5'
+    }
+}
+
+/*
+移除1个输出文件  gradle -q removeOutput incrementalReverse
+
+ALL inputs considered out of date
+out of date: 4.txt
+out of date: 2.txt
+out of date: 1.txt
+ */
+task removeOutput() {
+    doLast {
+        file("$buildDir/outputs/1.txt").delete()
+    }
+}
+
+/*
+gradle -q -PtaskInputProperty=changed incrementalReverse
+
+ALL inputs considered out of date
+out of date: 4.txt
+out of date: 2.txt
+out of date: 1.txt
+*/
