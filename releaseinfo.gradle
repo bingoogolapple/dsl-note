@@ -83,3 +83,26 @@
 //        println '输入输出任务结束'
 //    }
 //}
+
+
+//task writeTask {
+//    outputs.file file("$buildDir/test.txt")
+//    doLast {
+//        println "$name 开始写入内容"
+//        outputs.files.singleFile.text = "我是写入的内容"
+//    }
+//}
+//
+//task readTask {
+//    inputs.file writeTask.outputs.files
+//    doLast {
+//        println "$name content is ${inputs.files.singleFile.text}"
+//    }
+//}
+//
+//task testDep {
+//    dependsOn writeTask, readTask
+//    doLast {
+//        println name
+//    }
+//}

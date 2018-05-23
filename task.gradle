@@ -330,7 +330,7 @@ task taskU(type: CreateDataTxtTask) {
 }
 
 task packageTxtFiles(type: Zip) {
-    from taskU.outputs
+    from taskU.outputs.files
     destinationDir buildDir
     baseName 'test'
 
