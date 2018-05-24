@@ -1,5 +1,7 @@
 package cn.bingoogolapple.dsl.groovy
 
+// Domain-Specific Languages ==> http://docs.groovy-lang.org/docs/latest/html/documentation/core-domain-specific-languages.html
+
 class BouquetConfiguration extends ArrayList<String> {
 
     int howMany(String flower) {
@@ -87,7 +89,9 @@ def florist = Florist.create {
     }
 }
 
-//println florist
+println florist
+
+// ====================================================
 
 interface Node {
     String render()
@@ -229,3 +233,103 @@ println TagDsl.make {
         }
     }
 }.render()
+
+// ====================================================
+
+class DslSpec {
+    int count = 3
+
+    DslSpec plus(int value) {
+        println "$count plus $value"
+        count = count + value
+        return this
+    }
+
+    DslSpec minus(int value) {
+        println "$count minus $value"
+        count = count - value
+        return this
+    }
+
+    DslSpec multiply(int value) {
+        count = count * value
+        println "$count multiply $value"
+        return this
+    }
+
+    DslSpec multiply(int value1, int value2) {
+        count = count * value1 * value2
+        println "$count multiply $value1 * $value2"
+        return this
+    }
+
+    DslSpec div(int value) {
+        count = count / value
+        println "$count div $value"
+        return this
+    }
+
+    DslSpec mod(int value) {
+        count = count % value
+        println "$count mod $value"
+        return this
+    }
+
+    DslSpec square() {
+        count = count * count
+        println "$count square"
+        return this
+    }
+
+    DslSpec given(Closure closure) {
+        println "given"
+        closure.call()
+        return this
+    }
+
+    DslSpec when(Closure closure) {
+        println "when"
+        closure.call()
+        return this
+    }
+
+    DslSpec then(Closure closure) {
+        println "then"
+        closure.call()
+        return this
+    }
+}
+
+static DslSpec make(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = DslSpec) Closure closure) {
+    DslSpec dslSpec = new DslSpec()
+    closure.resolveStrategy = Closure.DELEGATE_FIRST
+    closure.delegate = dslSpec
+    closure.call()
+    return dslSpec
+}
+
+DslSpec dslSpec = new DslSpec()
+
+println make {
+    plus(1).multiply(2)
+    plus 1 multiply 2
+
+    plus(dslSpec.count).multiply(2).div(dslSpec.count)
+    plus dslSpec.count multiply 2 div dslSpec.count
+
+    plus(1).multiply(2, 3).div(2)
+    plus 1 multiply 2, 3 div 2
+
+//    plus(value: 1).multiply(2)
+//    plus value: 1 multiply 2
+
+    given({}).when({}).then({})
+    given {} when {} then {}
+
+    plus(1).square().multiply(2)
+    plus 1 square() multiply 2
+
+    plus(1).count
+    plus 1 count
+}.count
+
