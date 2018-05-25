@@ -46,3 +46,6 @@ proguard/
 *.keystore
 
 captures
+
+classes/
+/*/classes/
