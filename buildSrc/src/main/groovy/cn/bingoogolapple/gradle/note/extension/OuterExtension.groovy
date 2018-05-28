@@ -1,6 +1,8 @@
 package cn.bingoogolapple.gradle.note.extension
 
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.Project
 
 // 外层扩展
 class OuterExtension {
@@ -11,11 +13,13 @@ class OuterExtension {
     final InnerExtension twoInnerExtension
     // 复杂类型扩展
     final List<String> complexParam
+    final NamedDomainObjectContainer<CustomFlavor> flavors
 
-    OuterExtension() {
+    OuterExtension(Project project) {
         oneInnerExtension = new InnerExtension()
         twoInnerExtension = new InnerExtension()
         complexParam = new ArrayList<>()
+        flavors = project.container(CustomFlavor)
     }
 
     // 通过 Action 嵌套扩展
@@ -34,9 +38,13 @@ class OuterExtension {
     void complex(String... args) {
         complexParam.addAll(args)
     }
+    
+    void customFlavors(Action<NamedDomainObjectContainer<CustomFlavor>> action) {
+        action.execute(flavors)
+    }
 
     @Override
     String toString() {
-        return "${this.class.simpleName} | name is $name | complexParam is $complexParam"
+        return "${this.class.simpleName} | name is $name | complexParam is $complexParam | flavors is $flavors"
     }
 }

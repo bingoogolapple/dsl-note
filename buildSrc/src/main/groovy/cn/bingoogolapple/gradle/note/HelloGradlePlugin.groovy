@@ -10,8 +10,8 @@ class HelloGradlePlugin implements Plugin<Project> {
     void apply(Project project) {
         println "$project.name 应用了 HelloGradlePlugin"
 
-        // 通过 project.extensions.create 创建外层扩展
-        project.extensions.create('outer', OuterExtension)
+        // 通过 project.extensions.create 创建外层扩展。第三个参数为可变长参数，表示模型的构造参数
+        project.extensions.create('outer', OuterExtension, project)
         // 创建好外层扩展 outer 后，通过 project.outer.extensions.create 创建嵌套内层扩展
         project.outer.extensions.create('innerThree', InnerExtension)
 

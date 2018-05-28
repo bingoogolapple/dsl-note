@@ -105,6 +105,36 @@ tasks.create(name: 'createSourceCode', group: 'gradle-plugin-template', descript
         rootProject.file("${pluginModuleName}/src/main/groovy/${pluginPackageName.replace('.', '/')}/extension").mkdirs()
     }
     doLast {
+        rootProject.file("${pluginModuleName}/src/main/groovy/${pluginPackageName.replace('.', '/')}/extension/CustomFlavor.groovy").withWriter { Writer writer ->
+            writer.write("""\
+package ${pluginPackageName}.extension
+
+class CustomFlavor {
+    final String name
+    String gender
+    Integer age
+
+    CustomFlavor(String name) {
+        this.name = name
+    }
+
+    void gender(String gender) {
+        this.gender = gender
+    }
+
+    void age(Integer age) {
+        this.age = age
+    }
+
+    @Override
+    String toString() {
+        return "\${this.class.simpleName} | name is \$name | gender is \$gender | age is \$age"
+    }
+}
+""")
+        }
+    }
+    doLast {
         rootProject.file("${pluginModuleName}/src/main/groovy/${pluginPackageName.replace('.', '/')}/extension/InnerExtension.groovy").withWriter { Writer writer ->
             writer.write("""\
 package ${pluginPackageName}.extension
@@ -139,6 +169,8 @@ class InnerExtension {
 package ${pluginPackageName}.extension
 
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.Project
 
 // 外层扩展
 class OuterExtension {
@@ -149,11 +181,13 @@ class OuterExtension {
     final InnerExtension twoInnerExtension
     // 复杂类型扩展
     final List<String> complexParam
+    final NamedDomainObjectContainer<CustomFlavor> flavors
 
-    OuterExtension() {
+    OuterExtension(Project project) {
         oneInnerExtension = new InnerExtension()
         twoInnerExtension = new InnerExtension()
         complexParam = new ArrayList<>()
+        flavors = project.container(CustomFlavor)
     }
 
     // 通过 Action 嵌套扩展
@@ -172,10 +206,14 @@ class OuterExtension {
     void complex(String... args) {
         complexParam.addAll(args)
     }
+    
+    void customFlavors(Action<NamedDomainObjectContainer<CustomFlavor>> action) {
+        action.execute(flavors)
+    }
 
     @Override
     String toString() {
-        return "\${this.class.simpleName} | name is \$name | complexParam is \$complexParam"
+        return "\${this.class.simpleName} | name is \$name | complexParam is \$complexParam | flavors is \$flavors"
     }
 }
 """)
@@ -223,8 +261,8 @@ class $pluginSimpleClassName implements Plugin<Project> {
     void apply(Project project) {
         println "\$project.name 应用了 $pluginSimpleClassName"
 
-        // 通过 project.extensions.create 创建外层扩展
-        project.extensions.create('outer', OuterExtension)
+        // 通过 project.extensions.create 创建外层扩展。第三个参数为可变长参数，表示模型的构造参数
+        project.extensions.create('outer', OuterExtension, project)
         // 创建好外层扩展 outer 后，通过 project.outer.extensions.create 创建嵌套内层扩展
         project.outer.extensions.create('innerThree', InnerExtension)
 
