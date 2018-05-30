@@ -1,5 +1,17 @@
 apply plugin: 'kotlin'
 apply plugin: 'application'
+apply plugin: 'kotlin-noarg'
+apply plugin: 'kotlin-allopen'
+
+// kotlin-noarg 编译期生成无参构造方法，kotlin 中不能直接使用，需要通过反射来使用，但在 Java 中可以直接使用该无参构造方法
+noArg{
+    annotation("cn.bingoogolapple.dsl.kotlin.NoArg")
+}
+
+// kotlin-allopen 编译期去掉 final，可以继承
+allOpen{
+    annotation("cn.bingoogolapple.dsl.kotlin.AllOpen")
+}
 
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
@@ -8,7 +20,7 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-mainClassName = 'cn.bingoogolapple.dsl.kotlin.HelloWorldKt'
+mainClassName = 'cn.bingoogolapple.dsl.kotlin._0_HelloWorldKt'
 defaultTasks 'run'
 
 dependencies {

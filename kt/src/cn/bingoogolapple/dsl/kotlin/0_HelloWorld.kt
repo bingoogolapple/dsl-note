@@ -15,7 +15,7 @@ fun main(args: Array<String>): Unit {
 
 /**
  * kotlinc 0_HelloWorld.kt -include-runtime -d HelloWorld.jar
- * java -jar HelloWorld.jar 参数1
+ * java -jar HelloWorld.jar 参数1 参数2
  *
  * kotlinc 0_HelloWorld.kt
  * kotlin cn.bingoogolapple.dsl.kotlin._0_HelloWorldKt 参数1 参数2
