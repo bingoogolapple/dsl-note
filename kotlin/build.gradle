@@ -20,9 +20,19 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
+
+kotlin {
+    experimental {
+        coroutines "enable"
+    }
+}
+
 mainClassName = 'cn.bingoogolapple.dsl.kotlin._0_HelloWorldKt'
 defaultTasks 'run'
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+    implementation 'com.squareup.retrofit2:retrofit:2.4.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
 }

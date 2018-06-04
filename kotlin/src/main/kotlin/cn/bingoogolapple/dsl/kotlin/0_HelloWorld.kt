@@ -1,5 +1,8 @@
 package cn.bingoogolapple.dsl.kotlin
 
+import cn.bingoogolapple.dsl.kotlin.coroutine.sequence.testSequence
+import cn.bingoogolapple.dsl.kotlin.coroutine.ui.CoroutineMain
+
 val TEST_A = 1 // val 定义运行时常量。可以通过反射来修改
 const val TEST_B = 3 // const val 定义编译期常量，不能通过反射来修改
 
@@ -13,6 +16,10 @@ fun main(args: Array<String>): Unit {
     args.forEach(::println)
 
     testDataClass()
+
+    CoroutineMain.main()
+
+    testSequence()
 }
 
 /**
@@ -45,7 +52,7 @@ fun testDataClass() {
 
     val args: Array<String> = arrayOf("sdf", "sss")
     // 这里的 withIndex 返回的就是 IndexedValue，转换成 Java 代码时也会有对应的 component1 和 component2 方法
-    for((index, value) in args.withIndex()) {
+    for ((index, value) in args.withIndex()) {
         println("$index, $value")
     }
 }
