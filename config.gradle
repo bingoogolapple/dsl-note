@@ -1,7 +1,7 @@
 // 父 Project 中的所有属性会被子 Project 继承
 // 用来存放应用中的所有配置变量，统一管理，而不再是每个 module 里都自己写一份，修改起来更加的方便
 ext {
-    kotlin_version = '1.2.41'
+    kotlin_version = '1.2.70'
     android = [compileSdkVersion: 27,
                minSdkVersion    : 19,
                targetSdkVersion : 27,
