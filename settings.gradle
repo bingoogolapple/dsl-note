@@ -1,6 +1,7 @@
 ComposeListener.log "①初始化阶段 START"
 rootProject.name = 'dsl-note'
 
+include ':bytecode'
 include ':groovy', ':kotlin'
 include ':app'
 include ':dirone', ':dirone:moduleone'
