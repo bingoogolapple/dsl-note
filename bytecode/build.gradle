@@ -19,7 +19,13 @@ mainClassName = 'cn.bingoogolapple.bytecode.GroovyMain'
 defaultTasks 'run'
 
 dependencies {
+    //gradle sdk
+    compile gradleApi()
+    //groovy sdk
+    compile localGroovy()
+    // implementation 'com.android.tools.build:gradle:3.2.0' 会自动依赖 asm
+    implementation 'org.ow2.asm:asm:6.0'
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'org.codehaus.groovy:groovy-all:2.4.15'
     implementation 'org.javassist:javassist:3.24.0-GA'
 }

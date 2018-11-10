@@ -1,13 +1,14 @@
-package cn.bingoogolapple.bytecode
+package cn.bingoogolapple.bytecode.javassist
 
+import cn.bingoogolapple.bytecode.GroovyMain
 import javassist.*
 import javassist.bytecode.ClassFile
 import javassist.bytecode.SignatureAttribute
 
-class JavassistTest {
+class JavassistGenerator {
     private ClassPool mClassPool
 
-    JavassistTest() {
+    JavassistGenerator() {
         mClassPool = ClassPool.getDefault()
 
         testList()
