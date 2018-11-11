@@ -1,244 +1,102 @@
 package cn.bingoogolapple.bytecode.asm
 
 import cn.bingoogolapple.bytecode.GroovyMain
-import cn.bingoogolapple.bytecode.SyntaxChildClass
-import javassist.*
-import javassist.bytecode.ClassFile
-import javassist.bytecode.SignatureAttribute
+import cn.bingoogolapple.bytecode.ToModify
+import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.*
+import org.objectweb.asm.tree.MethodNode
 
-class AsmGenerator {
-    private ClassPool mClassPool
-    private File mPackageDir
+/**
+ * 核心 API：可以对比 XML 中解析的 SAX，不需要把这个类的整个结构读取进来，节约内存，但是编程难度较大。
+ *          在采用基于事件的模型时，类是用一系列事件来表示的，每个事件表示类的一个元素，比如它的一个字段、一个方法声明、一条指令，等等。
+ *          基于事件的 API 定义了一组可能事件，以及这些事件必须遵循的发生顺序，还提供了一个类分析器，为每个被分析元素生成一个事件，还提供一个类写入器，由这些事件的序列生成经过编译的类。
+ * 树 API：对比 XML 解析中的 DOM，需要把整个类的结构读取到内存中，消耗内存多，但是编程较为简单
+ *
+ * ClassVisitor：主要提供了和类结构同名的一些方法，这些方法可以对相应的类结构进行操作
+ *              定义的方法调用是有顺序的，在 ClassVisitor 中定义了调用的顺序和每个方法在可以出现的次数，如下：
+ *              visit [ visitSource ] [ visitOuterClass ] ( visitAnnotation | visitAttribute )* (visitInnerClass | visitField | visitMethod )* visitEnd
+ *
+ *              visitInnerClass、visitField、visitMethod 和 visitEnd 方法允许我们进行添加一个类属性操作
+ *              visitInnerClass、visitField、visitMethod：这些方法有可能会被多次调用，因此在这些方法中创建属性时要注意会重复创建
+ *              visitEnd：这个方法只有在最后才会被调用且只调用一次，所以在这个方法中添加属性是唯一的，因此一般添加属性选择在这个方法里编码
+ *
+ * ClassReader：可以读取编译好的二进制 Class 文件。提供你要转变的类的字节数组，它的 accept 方法，接受一个具体的 ClassVisitor，并调用实现中具体的 visit[Xxxxx] 方法
+ *
+ * ClassWriter：这个类是 ClassVisitor 的一个实现类，这个类中的 toByteArray 方法会将最终修改的字节码以 byte 数组形式返回。
+ *              在这个类的构造时可以指定让系统自动为我们计算栈和本地变量表的大小(COMPUTE_MAXS)，也可以指定系统自动为我们计算栈帧的大小(COMPUTE_FRAMES)
+ *
+ * AnnotationVisitor：这个接口中定义了和 Annotation 结构相对应的方法，这些方法可以操作 Annotation 中的定义
+ *                    调用顺序 (visit | visitEnum | visitAnnotation | visitArray)* visitEnd
+ *
+ * FieldVisitor：定义了和属性结构相对应的方法，这些方法可以操作属性
+ *               调用顺序 (visitAnnotation | visitAttribute)* visitEnd
+ *
+ * MethodVisitor：定义了和方法结构相对应的方法，这些方法可以去操作源方法
+ *
+ */
+class AsmGenerator implements Opcodes {
+    public static final File PACKAGE_DIR = new File("${GroovyMain.OUTPUT_PATH}cn/bingoogolapple/bytecode/generated/asm")
 
     AsmGenerator() {
-        mClassPool = ClassPool.getDefault()
-        testClassPrinter()
+        if (PACKAGE_DIR.exists()) {
+            PACKAGE_DIR.delete()
+        }
+        PACKAGE_DIR.mkdirs()
 
-        mkPackageDir()
+//        testClassPrinter()
 
-        testAddMethod()
+//        testModifyMethod()
 
-//        test1()
-
-//        testList()
-//        testListOne()
-//        testListTwo()
-//        testListThree()
-//
-//        testMapOne()
-//        testMapTwo()
-//
-//        testTable()
+        new GenerateTestListOne()
+        new GenerateTestListTwo()
     }
 
     private void testClassPrinter() {
-        ClassPrinter printer = new ClassPrinter()
-//        new ClassReader("cn.bingoogolapple.bytecode.SyntaxSuperInterface").accept(printer, 0)
-//        new ClassReader("cn.bingoogolapple.bytecode.SyntaxChildInterface").accept(printer, 0)
-//        new ClassReader("cn.bingoogolapple.bytecode.SyntaxSuperClass").accept(printer, 0)
-        new ClassReader("cn.bingoogolapple.bytecode.SyntaxChildClass").accept(printer, 0)
-    }
+        // 内部名字为：java/lang/Integer
+        info "内部名字为：${Type.getInternalName(Integer.class)}"
+        // 内部名字为：int
+        info "内部名字为：${Type.getInternalName(int.class)}"
+        // 类型描述为：Ljava/lang/Integer;
+        info "类型描述为：${Type.getDescriptor(Integer.class)}"
+        // 类型描述为：I
+        info "类型描述为：${Type.getDescriptor(int.class)}"
+        // 方法描述为：(I)Ljava/lang/String;
+        info "方法描述为：${Type.getMethodDescriptor(String.class.getMethod("substring", int.class))}"
 
-    private void mkPackageDir() {
-        mPackageDir = new File("${GroovyMain.OUTPUT_PATH}cn/bingoogolapple/bytecode/generated/asm")
-        if (mPackageDir.exists()) {
-            mPackageDir.delete()
+
+        String className = "cn.bingoogolapple.bytecode.SyntaxSuperInterface"
+        className = "cn.bingoogolapple.bytecode.SyntaxChildInterface"
+        className = "cn.bingoogolapple.bytecode.SyntaxSuperClass"
+        className = "cn.bingoogolapple.bytecode.SyntaxChildClass"
+        ClassReader classReader = new ClassReader(className)
+        // 核心 API
+        // 第二个参数忽略调试信息
+        classReader.accept(new ClassPrinter(), ClassReader.SKIP_DEBUG)
+
+        // 树 API
+        ClassNode classNode = new ClassNode(ASM7)
+        classReader.accept(classNode, ClassReader.SKIP_DEBUG)
+        for (MethodNode methodNode : classNode.methods) {
+            info "「access=${methodNode.access}」「name=${methodNode.name}」「desc=${methodNode.desc}」「signature=${methodNode.signature}」「exceptions=${methodNode.exceptions}」"
         }
-        mPackageDir.mkdirs()
     }
 
-    private void testAddMethod() {
-        ClassReader cr = new ClassReader(SyntaxChildClass.class.getName())
+    private void testModifyMethod() {
+        ClassReader cr = new ClassReader(ToModify.class.getName())
         ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
-        cr.accept(cw, Opcodes.ASM5)
+        ClassVisitor cv = new TestClassVisitor(cw)
+        cr.accept(cv, ASM7)
 
-        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "newMethod", "(Ljava/lang/Integer;)V", null, null)
-        mv.visitInsn(Opcodes.RETURN)
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "newMethod", "(Ljava/lang/Integer;)V", null, null)
+        mv.visitInsn(RETURN)
         mv.visitEnd()
 
-        new FileOutputStream(new File(mPackageDir, "SyntaxChildClassNew.class")).withCloseable {
+        new FileOutputStream(new File(PACKAGE_DIR, "Modified.class")).withCloseable {
             // 将 cw 转换成字节数组写到文件里面去
             it.write(cw.toByteArray())
         }
     }
 
-    private void test() {
-        // 生成一个类只需要 ClassWriter 组件即可
-        ClassWriter cw = new ClassWriter(0)
-        // 通过 visit 方法确定类的头部信息
-        cw.visit(Opcodes.V1_7, Opcodes.ACC_PUBLIC, "cn/bingoogolapple/bytecode/generated/asm/TestList", "<T:Ljava/lang/Object;>Ljava/lang/Object;", null, null)
-        // 自定义静态属性
-        cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, "LESS", 'I', null, new Integer(-1)).visitEnd()
-        // 定义属性
-        cw.visitField(Opcodes.ACC_PRIVATE, 'value', 'T', 'TT;', null).visitEnd()
-        // 定义方法
-        MethodVisitor mv
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, '<init>', '(LT;)V', null, null)
-        mv.visitEnd()
-        cw.visitMethod(Opcodes.ACC_PUBLIC, 'setValue', '(LT;Ljava/lang/Object;)V', null, null).visitEnd()
-
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, 'getValue', '()LT;', null, null)
-        mv.visitCode()
-        mv.visitLdcInsn("value")
-        mv.visitInsn(Opcodes.ARETURN)
-        mv.visitMaxs(1, 1)
-        mv.visitEnd()
-
-        cw.visitEnd() // 使 cw 类已经完成
-
-        new FileOutputStream(new File(mPackageDir, "TestList.class")).withCloseable {
-            // 将cw转换成字节数组写到文件里面去
-            it.write(cw.toByteArray())
-        }
-    }
-
-    private void testList() {
-        CtClass customListCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestList")
-
-        def typeParameterArr = [new SignatureAttribute.TypeParameter("T")] as SignatureAttribute.TypeParameter[]
-        SignatureAttribute.ClassSignature cs = new SignatureAttribute.ClassSignature(typeParameterArr)
-        info "类签名为 ${cs.encode()}" // <T:Ljava/lang/Object;>Ljava/lang/Object;
-        customListCtClass.setGenericSignature(cs.encode())
-
-        CtClass objectClass = mClassPool.get(CtClass.javaLangObject)
-        CtField f = new CtField(objectClass, "value", customListCtClass)
-        SignatureAttribute.TypeVariable tvar = new SignatureAttribute.TypeVariable("T")
-        info "属性签名为 ${tvar.encode()}" // TT;
-        f.setGenericSignature(tvar.encode())
-        customListCtClass.addField(f)
-
-        CtConstructor constructor = CtNewConstructor.make("public TestList(Object v){value = v;}", customListCtClass)
-        SignatureAttribute.MethodSignature constructorMs = new SignatureAttribute.MethodSignature(null, [tvar] as SignatureAttribute.Type[],
-                null, null)
-        info "constructor 方法签名为 ${constructorMs.encode()}"
-        constructor.setGenericSignature(constructorMs.encode())   // (TT;)V;
-        customListCtClass.addConstructor(constructor)
-
-        CtMethod m = CtNewMethod.make("public Object get(){return value;}", customListCtClass)
-        SignatureAttribute.MethodSignature getMs = new SignatureAttribute.MethodSignature(null, null, tvar, null)
-        info "get 方法签名为 ${getMs.encode()}"
-        m.setGenericSignature(getMs.encode())     // ()TT;
-        customListCtClass.addMethod(m)
-
-        CtMethod m2 = CtNewMethod.make("public void set(Object v){value = v;}", customListCtClass)
-        SignatureAttribute.MethodSignature setMs = new SignatureAttribute.MethodSignature(null, [tvar] as SignatureAttribute.Type[],
-                new SignatureAttribute.BaseType("void"), null)
-        info "set 方法签名为 ${setMs.encode()}"
-        m2.setGenericSignature(setMs.encode())   // (TT;)V;
-        customListCtClass.addMethod(m2)
-
-        customListCtClass.writeFile(GroovyMain.OUTPUT_PATH)
-        // 后面还要用，不能 detach
-//        customListCtClass.detach()
-        info "生成 TestList"
-    }
-
-    private void testListOne() {
-        CtClass childCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestListOne")
-
-        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestList"))
-
-        childCtClass.writeFile(GroovyMain.OUTPUT_PATH)
-        childCtClass.detach()
-        info "生成 TestListOne"
-    }
-
-    private void testListTwo() {
-        CtClass childCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestListTwo")
-
-        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestList"))
-        childCtClass.setGenericSignature(getListSignature())
-
-        childCtClass.writeFile(GroovyMain.OUTPUT_PATH)
-        childCtClass.detach()
-        info "生成 TestListTwo"
-    }
-
-    private void testListThree() {
-        CtClass childCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestListThree")
-
-        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestList"))
-
-        ClassFile childClassFile = childCtClass.classFile
-        SignatureAttribute signatureAttribute = new SignatureAttribute(childClassFile.getConstPool(), getListSignature())
-        childClassFile.addAttribute(signatureAttribute)
-
-        childCtClass.writeFile(GroovyMain.OUTPUT_PATH)
-        childCtClass.detach()
-        info "生成 TestListThree"
-    }
-
-    private String getListSignature() {
-        return "Lcn/bingoogolapple/bytecode/generated/javassist/TestList<Ljava/awt/Point;>;"
-    }
-
-    private void testMapOne() {
-        CtClass childCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestMapOne")
-
-        childCtClass.setSuperclass(mClassPool.getCtClass("java.util.HashMap"))
-        childCtClass.setGenericSignature(getMapSignature())
-
-        childCtClass.writeFile(GroovyMain.OUTPUT_PATH)
-        childCtClass.detach()
-        info "生成 TestMapOne"
-    }
-
-    private void testMapTwo() {
-        CtClass childCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestMapTwo")
-
-        childCtClass.setSuperclass(mClassPool.getCtClass("java.util.HashMap"))
-
-        ClassFile childClassFile = childCtClass.classFile
-        SignatureAttribute signatureAttribute = new SignatureAttribute(childClassFile.getConstPool(), getMapSignature())
-        childClassFile.addAttribute(signatureAttribute)
-
-        childCtClass.writeFile(GroovyMain.OUTPUT_PATH)
-        childCtClass.detach()
-        info "生成 TestMapTwo"
-    }
-
-    private String getMapSignature() {
-        return "Ljava/util/HashMap<Ljava/lang/String;Ljava/awt/Point;>;"
-    }
-
-    private void testTable() {
-        // 类
-        CtClass itemTableCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.ItemTable")
-        itemTableCtClass.setSuperclass(mClassPool.getCtClass("java.util.ArrayList"))
-        itemTableCtClass.setGenericSignature("Ljava/util/ArrayList<Lcn/bingoogolapple/bytecode/KotlinItem;>;")
-        // 静态属性
-        CtField contentCtField = new CtField(mClassPool.get("java.util.ArrayList"), "sContent", itemTableCtClass)
-        contentCtField.setGenericSignature("Ljava/util/ArrayList<Lcn/bingoogolapple/bytecode/KotlinItem;>;")
-        contentCtField.setModifiers(Modifier.PRIVATE | Modifier.STATIC)
-        itemTableCtClass.addField(contentCtField, CtField.Initializer.byNew(mClassPool.get("java.util.ArrayList")))
-        // 静态代码块
-        itemTableCtClass.makeClassInitializer().insertAfter("sContent.add(new cn.bingoogolapple.bytecode.KotlinItem(1));")
-        itemTableCtClass.makeClassInitializer().insertAfter("sContent.add(new cn.bingoogolapple.bytecode.KotlinItem(2));")
-        // 构造方法
-        CtConstructor ctConstructor = CtNewConstructor.make("public ItemTable(){}", itemTableCtClass)
-
-        // 没有参数时可以不设置签名
-//        SignatureAttribute.MethodSignature constructorMs = new SignatureAttribute.MethodSignature(null, null, null, null)
-//        info "constructor 方法签名为 ${constructorMs.encode()}"
-//        ctConstructor.setGenericSignature(constructorMs.encode())   // ()V;
-
-        // 通过 insertParameter 或 addParameter 添加参数时可以不设置签名
-//        ctConstructor.insertParameter(mClassPool.get("java.lang.String"))
-//        ctConstructor.addParameter(mClassPool.get("java.lang.Long"))
-
-        itemTableCtClass.addConstructor(ctConstructor)
-        ctConstructor.insertAfter("add(new cn.bingoogolapple.bytecode.KotlinItem(1));")
-        ctConstructor.insertAfter("add(new cn.bingoogolapple.bytecode.KotlinItem(2));")
-        ctConstructor.insertAfter("sContent.add(new cn.bingoogolapple.bytecode.KotlinItem(3));")
-
-
-        itemTableCtClass.writeFile(GroovyMain.OUTPUT_PATH)
-        info "生成 ItemTable"
-
-        ArrayList list = itemTableCtClass.toClass().newInstance()
-        info list.toString()
-    }
 
     private void info(String msg) {
         println "ByteCode ====> ${msg}"

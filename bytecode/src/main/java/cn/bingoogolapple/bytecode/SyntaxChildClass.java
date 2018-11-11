@@ -9,6 +9,7 @@ private	    Y	    N	    N   	    N
  */
 //「version=52」「access=33」「name=cn/bingoogolapple/bytecode/SyntaxChildClass」「signature=Lcn/bingoogolapple/bytecode/SyntaxSuperClass<Ljava/lang/String;>;」「superName=cn/bingoogolapple/bytecode/SyntaxSuperClass」「interfaces=[]」
 public class SyntaxChildClass extends SyntaxSuperClass<String> {
+    // 编译器帮我们创建空参数的构造方法
     // 「access=1」「name=<init>」「desc=()V」「signature=null」「exceptions=null」
 
     //「access=1」「name=test11」「desc=()V」「signature=null」「exceptions=null」

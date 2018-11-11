@@ -24,7 +24,8 @@ dependencies {
     //groovy sdk
     compile localGroovy()
     // implementation 'com.android.tools.build:gradle:3.2.0' 会自动依赖 asm
-    implementation 'org.ow2.asm:asm:6.0'
+    implementation 'org.ow2.asm:asm:7.0'
+    implementation 'org.ow2.asm:asm-tree:7.0'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'org.javassist:javassist:3.24.0-GA'

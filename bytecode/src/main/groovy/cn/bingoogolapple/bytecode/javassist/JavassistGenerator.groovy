@@ -23,7 +23,7 @@ class JavassistGenerator {
     }
 
     private void testList() {
-        CtClass customListCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestList")
+        CtClass customListCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestListDemo")
 
         def typeParameterArr = [new SignatureAttribute.TypeParameter("T")] as SignatureAttribute.TypeParameter[]
         SignatureAttribute.ClassSignature cs = new SignatureAttribute.ClassSignature(typeParameterArr)
@@ -37,7 +37,7 @@ class JavassistGenerator {
         f.setGenericSignature(tvar.encode())
         customListCtClass.addField(f)
 
-        CtConstructor constructor = CtNewConstructor.make("public TestList(Object v){value = v;}", customListCtClass)
+        CtConstructor constructor = CtNewConstructor.make("public TestListDemo(Object v){value = v;}", customListCtClass)
         SignatureAttribute.MethodSignature constructorMs = new SignatureAttribute.MethodSignature(null, [tvar] as SignatureAttribute.Type[],
                 null, null)
         info "constructor 方法签名为 ${constructorMs.encode()}"
@@ -60,13 +60,13 @@ class JavassistGenerator {
         customListCtClass.writeFile(GroovyMain.OUTPUT_PATH)
         // 后面还要用，不能 detach
 //        customListCtClass.detach()
-        info "生成 TestList"
+        info "生成 TestListDemo"
     }
 
     private void testListOne() {
         CtClass childCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestListOne")
 
-        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestList"))
+        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestListDemo"))
 
         childCtClass.writeFile(GroovyMain.OUTPUT_PATH)
         childCtClass.detach()
@@ -76,7 +76,7 @@ class JavassistGenerator {
     private void testListTwo() {
         CtClass childCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestListTwo")
 
-        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestList"))
+        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestListDemo"))
         childCtClass.setGenericSignature(getListSignature())
 
         childCtClass.writeFile(GroovyMain.OUTPUT_PATH)
@@ -87,7 +87,7 @@ class JavassistGenerator {
     private void testListThree() {
         CtClass childCtClass = mClassPool.makeClass("cn.bingoogolapple.bytecode.generated.javassist.TestListThree")
 
-        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestList"))
+        childCtClass.setSuperclass(mClassPool.getCtClass("cn.bingoogolapple.bytecode.generated.javassist.TestListDemo"))
 
         ClassFile childClassFile = childCtClass.classFile
         SignatureAttribute signatureAttribute = new SignatureAttribute(childClassFile.getConstPool(), getListSignature())
@@ -99,7 +99,7 @@ class JavassistGenerator {
     }
 
     private String getListSignature() {
-        return "Lcn/bingoogolapple/bytecode/generated/javassist/TestList<Ljava/awt/Point;>;"
+        return "Lcn/bingoogolapple/bytecode/generated/javassist/TestListDemo<Ljava/awt/Point;>;"
     }
 
     private void testMapOne() {
