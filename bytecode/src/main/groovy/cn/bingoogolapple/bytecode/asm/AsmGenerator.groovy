@@ -47,8 +47,9 @@ class AsmGenerator implements Opcodes {
 
 //        testModifyMethod()
 
-        new GenerateTestListOne()
-        new GenerateTestListTwo()
+//        new GenerateTestListOne()
+//        new GenerateTestListTwo()
+        new GenerateItemTable()
     }
 
     private void testClassPrinter() {
