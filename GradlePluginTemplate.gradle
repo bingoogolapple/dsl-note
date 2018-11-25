@@ -56,7 +56,7 @@ dependencies {
     compile gradleApi() // 查看源码时，在 AS 右上角提示中选择「用户主目录/.gradle/wrapper/dists/gradle-版本号-all/hash值/gradle-版本号/src」
     // Groovy SDK
     compile localGroovy()
-    compileOnly 'com.android.tools.build:gradle:3.1.2' // 便于查看 Android 源码
+    compileOnly 'com.android.tools.build:gradle:3.2.1' // 便于查看 Android 源码
     // 还可以添加该插件依赖的其他库
 }
 
