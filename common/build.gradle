@@ -1,0 +1,8 @@
+apply plugin: 'java'
+
+dependencies {
+    compileOnly 'com.google.android:android:4.1.1.4'
+}
+
+// ./gradlew :common:clean :common:build :common:uploadArchives -PpublishAar
+apply from: 'https://raw.githubusercontent.com/bingoogolapple/PublishAar/master/local-release.gradle'

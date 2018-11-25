@@ -1,12 +1,15 @@
 ComposeListener.log "①初始化阶段 START"
 rootProject.name = 'dsl-note'
 
-include ':bytecode'
-include ':groovy', ':kotlin'
+include ':common'
+include ':api'
 include ':app'
 include ':dirone', ':dirone:moduleone'
 include ':moduletwo'
 project(':moduletwo').projectDir = new File(settingsDir, 'dirtwo/moduletwo')
+
+include ':bytecode'
+include ':groovy', ':kotlin'
 
 class ComposeListener implements TaskExecutionGraphListener, TaskActionListener, BuildListener, ProjectEvaluationListener, TaskExecutionListener {
     private long startBuildTime

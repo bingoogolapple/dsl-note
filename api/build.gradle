@@ -1,0 +1,22 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion rootProject.ext.android.compileSdkVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.android.minSdkVersion
+        targetSdkVersion rootProject.ext.android.targetSdkVersion
+        consumerProguardFiles 'consumer-proguard-rules.pro'
+    }
+}
+
+dependencies {
+    if(hasProperty("publishAar")) {
+        compile "cn.bingoogolapple:bga-dsl-note-common:${VERSION_NAME}"
+    } else {
+        api project(':common')
+    }
+}
+
+// ./gradlew :api:clean :api:build :api:uploadArchives -PpublishAar
+apply from: 'https://raw.githubusercontent.com/bingoogolapple/PublishAar/master/local-release.gradle'

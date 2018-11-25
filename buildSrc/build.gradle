@@ -1,48 +1,60 @@
 apply plugin: 'groovy' // 插件基于 groovy 编写，需要依赖 groovy 插件
 
-// 配置仓库
-repositories {
-    jcenter()
-    google()
-}
+def isNotStandalone = project.parent != null
+def isDebugPlugin = false
 
-dependencies {
-    // Gradle SDK
-    compile gradleApi() // 查看源码时，在 AS 右上角提示中选择「用户主目录/.gradle/wrapper/dists/gradle-版本号-all/hash值/gradle-版本号/src」
-    // Groovy SDK
-    compile localGroovy()
-    compileOnly 'com.android.tools.build:gradle:3.2.1' // 便于查看 Android 源码
-    // 还可以添加该插件依赖的其他库
-}
+if (isNotStandalone) {
+    isDebugPlugin = DEBUG_PLUGIN
+} else {
+    Properties props = new Properties()
+    props.load(rootProject.file('../gradle.properties').newDataInputStream())
+    isDebugPlugin = props.getProperty('DEBUG_PLUGIN')
 
-// =============== 发布 gradle 插件到 maven 私服 START ===============
-apply plugin: 'maven'
-// 执行 gradle :buildSrc:clean :buildSrc:build :buildSrc:uploadArchives 即可发布插件到 maven 私服
-uploadArchives {
-    repositories.mavenDeployer {
-        repository(url: uri("${System.properties['user.home']}/.gradle/local_repo")) // 这里发布到本地仓库「用户主目录/.gradle/local_repo」便于测试
-
-        pom.version = '1.0.0' // maven 中插件的版本
-        pom.artifactId = 'first-gradle-plugin' // maven 中构件的 id
-        pom.groupId = 'cn.bingoogolapple' // maven 中组 id
-    }
-}
-// =============== 发布 gradle 插件到 maven 私服 END ===============
-
-/*
-在根工程的 build.gradle 中新增如下代码
-buildscript {
     repositories {
-        // ======== 新增的 START | 1.配置仓库地址 ========
         maven {
             url uri("${System.properties['user.home']}/.gradle/local_repo")
         }
-        // ======== 新增的 END | 1.配置仓库地址 ========
-    }
-    dependencies {
-        // ======== 新增的 START | 2.将插件添加到 classpath 中 ========
-        classpath 'cn.bingoogolapple:first-gradle-plugin:1.0.0'
-        // ======== 新增的 END | 2.将插件添加到 classpath 中 ========
+        google()
+        jcenter()
     }
 }
-*/
+println "是否非独立 ${isNotStandalone}，是否调试 ${isDebugPlugin}，是否发布 ${hasProperty('publishAar')}"
+
+
+dependencies {
+    // 查看源码时，在 AS 右上角提示中选择「用户主目录/.gradle/wrapper/dists/gradle-版本号-all/hash值/gradle-版本号/src」
+    compile gradleApi()
+    //groovy sdk
+    compile localGroovy()
+
+    implementation 'com.android.tools.build:gradle:3.2.1'
+    
+    implementation 'org.javassist:javassist:3.24.0-GA'
+    implementation 'commons-io:commons-io:2.6'
+
+    implementation 'org.aspectj:aspectjtools:1.9.2'
+
+    compileOnly 'com.google.android:android:4.1.1.4'
+}
+
+if (isNotStandalone) {
+    dependencies {
+        if (Boolean.valueOf(isDebugPlugin)) {
+            println "直接依赖 common 模块"
+            implementation project.project(':common')
+        } else {
+            println "依赖发布后 common 库"
+            implementation "com.sankuai.erp.component:appinit-common:${VERSION_NAME}"
+        }
+    }
+} else {
+    println "依赖 common 模块源码"
+    sourceSets {
+        main {
+            java.srcDirs += "${project.rootDir.parent}/common/src/main/java"
+        }
+    }
+}
+
+// ./gradlew :buildSrc:clean :buildSrc:build :buildSrc:uploadArchives -PpublishAar
+apply from: 'https://raw.githubusercontent.com/bingoogolapple/PublishAar/master/local-release.gradle'
