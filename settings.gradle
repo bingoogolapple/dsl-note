@@ -8,7 +8,7 @@ include ':dirone', ':dirone:moduleone'
 include ':moduletwo'
 project(':moduletwo').projectDir = new File(settingsDir, 'dirtwo/moduletwo')
 
-include ':bytecode'
+include ':dynamic'
 include ':groovy', ':kotlin'
 
 class ComposeListener implements TaskExecutionGraphListener, TaskActionListener, BuildListener, ProjectEvaluationListener, TaskExecutionListener {
