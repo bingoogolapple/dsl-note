@@ -6,12 +6,17 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import javax.lang.model.element.Modifier;
+import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.io.Serializable;
+import java.util.*;
 
+/**
+ * $T 是类型替换，一般用于 ("$T foo", List.class) => List foo。$T 的好处在于 JavaPoet 会自动帮你补全文件开头的 import，如果直接写 ("List foo") 虽然也能生成 List foo， 但是最终的 java 文件就不会自动帮你添加 import java.util.List
+ * $L 是字面量替换，比如 ("abc$L123", "FOO") => abcFOO123. 也就是直接替换
+ * $S 是字符串替换，比如: ("$S.length()", "foo") => "foo".length()，注意 $S 是将参数替换为了一个带双引号的字符串，免去了手写 "\"foo\".length()" 中转义 (\") 的麻烦
+ * $N 是名称替换，比如你之前定义了一个函数 MethodSpec methodSpec = MethodSpec.methodBuilder("foo").build()，现在你可以通过 $N 获取这个函数的名称 ("$N", methodSpec) => foo
+ */
 @RunWith(JUnit4.class)
 public class JavaTest {
 
@@ -362,5 +367,230 @@ public class JavaTest {
                 .build();
 
         JavaFile.builder("cn.bingoogolapple.dynamic", hello).build().writeTo(System.out);
+    }
+
+    @Test
+    public void typeTest() throws IOException {
+        JavaFile.builder("cn.bingoogolapple.dynamic", TypeSpec.classBuilder("Hello")
+                .addTypeVariable(TypeVariableName.get("T"))
+                .addField(int.class, "a", Modifier.PRIVATE) // 最终调的也是 TypeName.INT
+                .addField(TypeName.INT, "b", Modifier.PRIVATE)
+                .addField(Integer.class, "c", Modifier.PRIVATE)
+                .addField(ClassName.get("java.lang", "Integer"), "d", Modifier.PRIVATE)
+                .addField(int[].class, "e", Modifier.PRIVATE)
+                .addField(ArrayTypeName.of(int.class), "f", Modifier.PRIVATE)
+                .addField(ArrayTypeName.of(Integer.class), "g", Modifier.PRIVATE)
+                .addField(ArrayTypeName.of(ClassName.get("java.lang", "Integer")), "h", Modifier.PRIVATE)
+                .addField(ParameterizedTypeName.get(List.class, String.class), "i", Modifier.PRIVATE)
+                .addField(ParameterizedTypeName.get(ClassName.get("java.util", "List"), ClassName.get("java.lang", "String")), "j", Modifier.PRIVATE)
+                .addField(TypeVariableName.get("T"), "k", Modifier.PRIVATE)
+                .addField(ParameterizedTypeName.get(ClassName.get("java.util", "List"), TypeVariableName.get("T")), "l", Modifier.PRIVATE)
+                .addField(ParameterizedTypeName.get(ClassName.get("java.util", "List"), WildcardTypeName.subtypeOf(String.class)), "m", Modifier.PRIVATE)
+                .addField(ParameterizedTypeName.get(Map.class, String.class, File.class), "n", Modifier.PRIVATE)
+                .addField(ParameterizedTypeName.get(ClassName.get("java.util", "Map"), ClassName.get("java.lang", "String"), ClassName.get("java.io", "File")), "o", Modifier.PRIVATE)
+                .addField(ParameterizedTypeName.get(ClassName.get("java.util", "Map"), TypeVariableName.get("T"), WildcardTypeName.subtypeOf(String.class)), "p", Modifier.PRIVATE)
+                .addField(ParameterizedTypeName.get(ClassName.get("java.util", "Map"), TypeVariableName.get("T"), WildcardTypeName.subtypeOf(ClassName.get("java.lang", "String"))), "q", Modifier.PRIVATE)
+                .build()
+        ).build().writeTo(System.out);
+    }
+
+    @Test
+    public void codeBlockTest() {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("food", "tacos");
+        map.put("count", 3);
+
+        System.out.println(CodeBlock.builder()
+                .add("I ate $L $L\n", 3, "tacos") // 相对参数
+                .addStatement("I ate $L $L", 3, "tacos") // 相对参数
+                .add("I ate $2L $1L\n", "tacos", 3) // 位置参数
+                .addStatement("I ate $2L $1L", "tacos", 3) // 位置参数
+                .addNamed("I ate $count:L $food:L", map) // 名称参数
+                .build().toString());
+    }
+
+    @Test
+    public void universalTest() throws IOException {
+        TypeSpec clazz = clazz(
+                builtinTypeField(),          // int
+                arrayTypeField(),            // int[]
+                refTypeField(),              // File
+                typeField(),                 // T
+                parameterizedTypeField(),    // List<String>
+                wildcardTypeField(),         // List<? extends String>
+                constructor(),               // 构造函数
+                method(code()));             // 普通方法
+        JavaFile.builder("cn.bingoogolapple.dynamic", clazz).build().writeTo(System.out);
+    }
+
+    /**
+     * `public abstract class Clazz<T> extends String implements Serializable, Comparable<String>, Comparable<? extends String> {
+     * ...
+     * }`
+     */
+    private static TypeSpec clazz(FieldSpec builtinTypeField, FieldSpec arrayTypeField, FieldSpec refTypeField,
+                                  FieldSpec typeField, FieldSpec parameterizedTypeField, FieldSpec wildcardTypeField,
+                                  MethodSpec constructor, MethodSpec methodSpec) {
+        return TypeSpec.classBuilder("Clazz")
+                // 限定符
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                // 泛型
+                .addTypeVariable(TypeVariableName.get("T"))
+
+                // 继承与接口
+                .superclass(String.class)
+                .addSuperinterface(Serializable.class)
+                .addSuperinterface(ParameterizedTypeName.get(Comparable.class, String.class))
+                .addSuperinterface(ParameterizedTypeName.get(ClassName.get(Map.class), TypeVariableName.get("T"), WildcardTypeName.subtypeOf(String.class)))
+
+                // 初始化块
+                .addStaticBlock(CodeBlock.builder().build())
+                .addInitializerBlock(CodeBlock.builder().build())
+
+                // 属性
+                .addField(builtinTypeField)
+                .addField(arrayTypeField)
+                .addField(refTypeField)
+                .addField(typeField)
+                .addField(parameterizedTypeField)
+                .addField(wildcardTypeField)
+
+                // 方法 （构造函数也在此定义）
+                .addMethod(constructor)
+                .addMethod(methodSpec)
+
+                // 内部类
+                .addType(TypeSpec.classBuilder("InnerClass").build())
+
+                .build();
+    }
+
+    /**
+     * 内置类型
+     */
+    private static FieldSpec builtinTypeField() {
+        // private int mInt;
+        return FieldSpec.builder(int.class, "mInt", Modifier.PRIVATE).build();
+    }
+
+    /**
+     * 数组类型
+     */
+    private static FieldSpec arrayTypeField() {
+        // private int[] mArr;
+        return FieldSpec.builder(int[].class, "mArr", Modifier.PRIVATE).build();
+    }
+
+    /**
+     * 需要导入 import 的类型
+     */
+    private static FieldSpec refTypeField() {
+        // private File mRef;
+        return FieldSpec.builder(File.class, "mRef", Modifier.PRIVATE).build();
+    }
+
+    /**
+     * 泛型
+     */
+    private static FieldSpec typeField() {
+        // private File mT;
+        return FieldSpec.builder(TypeVariableName.get("T"), "mT", Modifier.PRIVATE).build();
+    }
+
+    /**
+     * 参数化类型
+     */
+    private static FieldSpec parameterizedTypeField() {
+        // private List<String> mParameterizedField;
+        return FieldSpec.builder(ParameterizedTypeName.get(List.class, String.class), "mParameterizedField", Modifier.PRIVATE).build();
+    }
+
+    /**
+     * 通配符参数化类型
+     */
+    private static FieldSpec wildcardTypeField() {
+        // private List<? extends String> mWildcardField;
+        return FieldSpec.builder(ParameterizedTypeName.get(ClassName.get(List.class), WildcardTypeName.subtypeOf(String.class)), "mWildcardField", Modifier.PRIVATE).build();
+    }
+
+    /**
+     * 构造函数
+     */
+    private static MethodSpec constructor() {
+        return MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC).build();
+    }
+
+    /**
+     * `@Override
+     * public <T> Integer method(String string, T t, Map<Integer, ? extends T> map) throws IOException, RuntimeException {
+     * ...
+     * }`
+     */
+    private static MethodSpec method(CodeBlock codeBlock) {
+        return MethodSpec.methodBuilder("method")
+                .addAnnotation(Override.class)
+                .addTypeVariable(TypeVariableName.get("T"))
+                .addModifiers(Modifier.PUBLIC)
+                .returns(int.class)
+                .addParameter(String.class, "string")
+                .addParameter(TypeVariableName.get("T"), "t")
+                .addParameter(ParameterizedTypeName.get(ClassName.get(Map.class), ClassName.get(Integer.class), WildcardTypeName.subtypeOf(TypeVariableName.get("T"))), "map")
+                .addException(IOException.class)
+                .addException(RuntimeException.class)
+                .addCode(codeBlock)
+                .build();
+    }
+
+    /**
+     * ‘method’ 方法中的具体语句
+     */
+    private static CodeBlock code() {
+        return CodeBlock.builder()
+                .addStatement("int foo = 1")
+                .addStatement("$T bar = $S", String.class, "a string")
+
+                // Object obj = new HashMap<Integer, ? extends T>(5);
+                .addStatement("$T obj = new $T(5)", Object.class, ParameterizedTypeName.get(ClassName.get(HashMap.class), ClassName.get(Integer.class), WildcardTypeName.subtypeOf(TypeVariableName.get("T"))))
+
+                // method(new Runnable(String param) {
+                //   @Override
+                //   void run() {
+                //   }
+                // });
+                .addStatement("baz($L)", TypeSpec.anonymousClassBuilder("$T param", String.class)
+                        .superclass(Runnable.class)
+                        .addMethod(MethodSpec.methodBuilder("run")
+                                .addAnnotation(Override.class)
+                                .returns(TypeName.VOID)
+                                .build())
+                        .build())
+
+                // for
+                .beginControlFlow("for (int i = 0; i < 5; i++)")
+                .endControlFlow()
+
+                // while
+                .beginControlFlow("while (false)")
+                .endControlFlow()
+
+                // do... while
+                .beginControlFlow("do")
+                .endControlFlow("while (false)")
+
+                // if... else if... else...
+                .beginControlFlow("if (false)")
+                .nextControlFlow("else if (false)")
+                .nextControlFlow("else")
+                .endControlFlow()
+
+                // try... catch... finally
+                .beginControlFlow("try")
+                .nextControlFlow("catch ($T e)", Exception.class)
+                .addStatement("e.printStackTrace()")
+                .nextControlFlow("finally")
+                .endControlFlow()
+
+                .addStatement("return 0")
+                .build();
     }
 }
