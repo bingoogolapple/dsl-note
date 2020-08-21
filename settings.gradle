@@ -10,6 +10,7 @@ project(':moduletwo').projectDir = new File(settingsDir, 'dirtwo/moduletwo')
 
 include ':dynamic'
 include ':groovy', ':kotlin'
+include ':gui'
 
 class ComposeListener implements TaskExecutionGraphListener, TaskActionListener, BuildListener, ProjectEvaluationListener, TaskExecutionListener {
     private long startBuildTime

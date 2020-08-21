@@ -19,4 +19,4 @@ dependencies {
 }
 
 // ./gradlew :api:clean :api:build :api:uploadArchives -PpublishAar
-apply from: 'https://raw.githubusercontent.com/bingoogolapple/PublishAar/master/local-release.gradle'
+//apply from: 'https://raw.githubusercontent.com/bingoogolapple/PublishAar/master/local-release.gradle'

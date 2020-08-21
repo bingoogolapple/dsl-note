@@ -57,4 +57,4 @@ if (isNotStandalone) {
 }
 
 // ./gradlew :buildSrc:clean :buildSrc:build :buildSrc:uploadArchives -PpublishAar
-apply from: 'https://raw.githubusercontent.com/bingoogolapple/PublishAar/master/local-release.gradle'
+//apply from: 'https://raw.githubusercontent.com/bingoogolapple/PublishAar/master/local-release.gradle'
