@@ -1,5 +1,6 @@
 package cn.bingoogolapple.gui.swing;
 
+import cn.bingoogolapple.gui.utils.ResourceUtils;
 import cn.bingoogolapple.gui.utils.ScreenUtils;
 
 import javax.swing.*;
@@ -39,10 +40,7 @@ public class DemoThree extends JFrame {
         container.add(label);
 
         JLabel iconLabel = new JLabel("图片和标签文本可以同时展示");
-        String resourceMain = ClassLoader.getSystemResource(".").getPath().replace("classes/java/main/", "resources/main/");
-
-        Icon icon = new ImageIcon(resourceMain + "avatar.png");
-        iconLabel.setIcon(icon);
+        iconLabel.setIcon(ResourceUtils.getImageIcon("avatar.png"));
         iconLabel.setSize(20, 20); // 即使设置标签大小也不会改变图片大小，调整窗口大小也不会改变图片大小
         container.add(iconLabel);
 

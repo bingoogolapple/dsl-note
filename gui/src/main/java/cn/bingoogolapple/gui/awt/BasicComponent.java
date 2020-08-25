@@ -7,7 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 /**
- * 演示各种布局
+ * 演示常用基础组件
  */
 public class BasicComponent extends Frame {
     public BasicComponent() {

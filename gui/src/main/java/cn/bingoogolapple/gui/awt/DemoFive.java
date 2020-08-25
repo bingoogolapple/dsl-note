@@ -1,5 +1,6 @@
 package cn.bingoogolapple.gui.awt;
 
+import cn.bingoogolapple.gui.utils.ResourceUtils;
 import cn.bingoogolapple.gui.utils.ScreenUtils;
 
 import javax.imageio.ImageIO;
@@ -289,8 +290,7 @@ public class DemoFive extends Frame {
                             break;
                         case "打开内部文件":
                             try {
-                                String resourceMain = ClassLoader.getSystemResource(".").getPath().replace("classes/java/main/", "resources/main/");
-                                image = ImageIO.read(new File(resourceMain + "avatar.png"));
+                                image = ImageIO.read(new File(ResourceUtils.getResourcePath("avatar.png")));
                                 imageG = image.getGraphics();
                             } catch (IOException ex) {
                                 ex.printStackTrace();
