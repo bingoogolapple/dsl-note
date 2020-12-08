@@ -1,4 +1,4 @@
-package cn.bingoogolapple.gui.awt;
+package cn.bingoogolapple.gui.swing;
 
 import java.awt.BorderLayout;
 import java.awt.Button;
@@ -8,13 +8,14 @@ import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.MenuItem;
 import java.awt.Panel;
 import java.awt.PopupMenu;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -28,6 +29,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 
 import cn.bingoogolapple.gui.utils.ResourceUtils;
 import cn.bingoogolapple.gui.utils.ScreenUtils;
@@ -35,7 +37,7 @@ import cn.bingoogolapple.gui.utils.ScreenUtils;
 /**
  * 演示绘图
  */
-public class DemoFive extends Frame {
+public class DemoFive extends JFrame {
     public DemoFive() {
         setTitle("演示绘图");
         setResizable(false);
@@ -168,6 +170,8 @@ public class DemoFive extends Frame {
 
         @Override
         public void paint(Graphics g) {
+            setRenderingHint((Graphics2D) g);
+
 //            super.paint(g); // 默认为 g.clearRect(0, 0, width, height)
 
             if (shape == 0) { // 绘制矩形
@@ -196,6 +200,7 @@ public class DemoFive extends Frame {
         }
 
         private void initBufferedImage() {
+            setRenderingHint((Graphics2D) imageG);
             imageG.setColor(Color.WHITE);
             imageG.fillRect(0, 0, AREA_WIDTH, AREA_HEIGHT);
 
@@ -290,6 +295,7 @@ public class DemoFive extends Frame {
                             try {
                                 image = ImageIO.read(new File(openFileDir, openFileName));
                                 imageG = image.getGraphics();
+                                setRenderingHint((Graphics2D) imageG);
                             } catch (IOException ex) {
                                 ex.printStackTrace();
                             }
@@ -312,6 +318,7 @@ public class DemoFive extends Frame {
                             try {
                                 image = ImageIO.read(new File(ResourceUtils.getResourcePath("avatar.png")));
                                 imageG = image.getGraphics();
+                                setRenderingHint((Graphics2D) imageG);
                             } catch (IOException ex) {
                                 ex.printStackTrace();
                             }
@@ -334,8 +341,16 @@ public class DemoFive extends Frame {
 
         @Override
         public void paint(Graphics g) {
+            setRenderingHint((Graphics2D) g);
+
             g.drawImage(image, 0, 0, null);
             g.drawImage(image, 0, 100, 1000, 40, null);
         }
+    }
+
+    public static void setRenderingHint(Graphics2D g) {
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
     }
 }
