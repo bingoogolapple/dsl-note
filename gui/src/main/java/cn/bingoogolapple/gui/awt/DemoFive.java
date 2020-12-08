@@ -1,16 +1,36 @@
 package cn.bingoogolapple.gui.awt;
 
-import cn.bingoogolapple.gui.utils.ResourceUtils;
-import cn.bingoogolapple.gui.utils.ScreenUtils;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.FileDialog;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.Panel;
+import java.awt.PopupMenu;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+
+import javax.imageio.ImageIO;
+
+import cn.bingoogolapple.gui.utils.ResourceUtils;
+import cn.bingoogolapple.gui.utils.ScreenUtils;
 
 /**
  * 演示绘图
@@ -315,6 +335,7 @@ public class DemoFive extends Frame {
         @Override
         public void paint(Graphics g) {
             g.drawImage(image, 0, 0, null);
+            g.drawImage(image, 0, 100, 1000, 40, null);
         }
     }
 }

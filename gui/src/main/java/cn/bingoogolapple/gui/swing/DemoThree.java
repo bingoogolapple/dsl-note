@@ -1,12 +1,19 @@
 package cn.bingoogolapple.gui.swing;
 
-import cn.bingoogolapple.gui.utils.ResourceUtils;
-import cn.bingoogolapple.gui.utils.ScreenUtils;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
+import cn.bingoogolapple.gui.utils.ResourceUtils;
+import cn.bingoogolapple.gui.utils.ScreenUtils;
 
 /**
  * 演示 JFrame 和 JDialog 结合使用方式
@@ -14,10 +21,10 @@ import java.awt.event.ActionListener;
 public class DemoThree extends JFrame {
     public DemoThree() {
         setTitle("父窗体标题");
-        setResizable(false);
+        setResizable(true);
         setSize(600, 300);
 //        setBounds(50, 50, 600, 300);
-        ScreenUtils.showOnScreen(1, this);
+        ScreenUtils.showOnScreen(0, this);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         Container container = getContentPane();
@@ -48,7 +55,7 @@ public class DemoThree extends JFrame {
     }
 
     private void showJDialog() {
-        JDialog dialog = new JDialog();
+        final JDialog dialog = new JDialog(this);
         /**
          * 参数1：父窗体
          * 参数2：标题
@@ -56,9 +63,10 @@ public class DemoThree extends JFrame {
          */
 //        JDialog dialog = new JDialog(this, "我是子窗口标题", true);
         dialog.setTitle("我是子窗口");
-        dialog.setModal(true); // 设置为模态窗口，阻塞操作父窗体
-        dialog.setBounds(100, 100, 200, 200); // 如果设置成了模态窗口，一定要在 setVisible 之前调用 setBounds，否则 setBounds 无效
-
+//        dialog.setModal(false); // 设置为模态窗口，阻塞操作父窗体
+//        dialog.setBounds(100, 100, 200, 200); // 如果设置成了模态窗口，一定要在 setVisible 之前调用 setBounds，否则 setBounds 无效
+        dialog.setResizable(false); // 设置窗体大小是否可以改变
+        dialog.setUndecorated(true); // 去除外边框
 
         Container container = dialog.getContentPane();
         container.setBackground(Color.CYAN);
@@ -68,13 +76,20 @@ public class DemoThree extends JFrame {
          */
         container.setLayout(null);
 
-        JButton btn1 = new JButton("按钮1");
+        JButton btn1 = new JButton("切换全屏");
         btn1.setBounds(10, 10, 100, 20);
         JButton btn2 = new JButton("按钮2");
         btn2.setBounds(50, 50, 100, 20);
         container.add(btn1);
         container.add(btn2);
-        dialog.setVisible(true);
+        btn1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ScreenUtils.requestToggleFullScreen(dialog);
+            }
+        });
+
+        ScreenUtils.showDual(dialog);
     }
 
     public static void main(String[] args) {
